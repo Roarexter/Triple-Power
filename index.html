@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TriplePower Card Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="border-b border-slate-800 bg-slate-900/50 glass sticky top-0 z-40 h-16 flex items-center px-6 justify-between">
+        <div class="flex items-center gap-2 font-black text-xl text-blue-400">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.47 4.34-2.85 8.13-7 10V12H5V6.3l7-3.11v8.8z"/></svg>
+            <span>TRIPLEPOWER</span>
+        </div>
+        <div class="hidden md:flex gap-6">
+            <button onclick="switchTab('battle')" class="tab-btn capitalize font-bold text-blue-400" id="btn-battle">Battle</button>
+            <button onclick="switchTab('collection')" class="tab-btn capitalize font-bold text-slate-500" id="btn-collection">Vault</button>
+            <button onclick="switchTab('guide')" class="tab-btn capitalize font-bold text-slate-500" id="btn-guide">Guide</button>
+        </div>
+        <div id="user-nav" class="flex items-center gap-4">
+            <button onclick="switchTab('auth')" class="bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm">Login</button>
+        </div>
+    </nav>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="fixed top-4 right-4 z-50 p-4 rounded-xl border shadow-2xl transition-all opacity-0 translate-y-[-20px] pointer-events-none"></div>
+
+    <main class="max-w-6xl mx-auto p-6">
+        
+        <!-- Auth View -->
+        <section id="tab-auth" class="tab-content max-w-md mx-auto py-10">
+            <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl">
+                <h2 id="auth-title" class="text-2xl font-black mb-8 text-center uppercase">Welcome Back</h2>
+                <form id="auth-form" class="space-y-4">
+                    <input id="auth-username" placeholder="Username" class="hidden w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input id="auth-email" type="email" placeholder="Email" required class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                    <input id="auth-password" type="password" placeholder="Password" required class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                    <button type="submit" class="w-full bg-blue-600 py-4 rounded-xl font-black shadow-lg shadow-blue-900/40 mt-4">CONTINUE</button>
+                </form>
+                <button onclick="toggleAuthMode()" id="auth-toggle" class="w-full mt-6 text-slate-500 text-sm font-bold hover:text-blue-400">
+                    Need an account? Sign Up
+                </button>
+            </div>
+        </section>
+
+        <!-- Battle View -->
+        <section id="tab-battle" class="tab-content active">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-slate-900 rounded-3xl p-10 border border-slate-800 text-center relative overflow-hidden">
+                        <div class="relative z-10">
+                            <div class="text-blue-500 font-black text-xs tracking-[0.2em] mb-4 uppercase">Current Arena</div>
+                            <h2 id="arena-name" class="text-5xl md:text-6xl font-black mb-2 uppercase tracking-tighter">Overgrown Forest</h2>
+                            <div id="arena-type" class="text-slate-500 font-bold mb-8">TYPE: NATURE</div>
+                            
+                            <div id="arena-attrs" class="flex flex-wrap justify-center gap-4 mb-10">
+                                <!-- Attributes go here -->
+                            </div>
+
+                            <div class="flex flex-wrap justify-center gap-4">
+                                <button onclick="nextBattlefield()" class="bg-white text-black px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:bg-blue-400 transition-all">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    NEW FIELD
+                                </button>
+                                <button onclick="toggleSpecials()" class="bg-slate-800 px-8 py-4 rounded-2xl font-black flex items-center gap-2 border border-slate-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    VIEW SPECIALS
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="specials-panel" class="hidden bg-slate-900/50 p-8 rounded-3xl border border-blue-500/20 animate-in fade-in">
+                        <h3 class="text-xl font-black mb-6 flex items-center gap-2 text-yellow-400 uppercase">Special Abilities</h3>
+                        <div id="specials-list" class="grid gap-4">
+                            <!-- Specials go here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800">
+                        <h3 class="text-lg font-black mb-4 flex items-center gap-2 text-yellow-500"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v1h1c0 2.21 1.79 4 4 4h1v5c0 1.66 1.34 3 3 3h2c1.66 0 3-1.34 3-3V9h1c2.21 0 4-1.79 4-4V4c0-1.1-.9-2-2-2zM6 4h3v3H8c-1.1 0-2-.9-2-2V4zm12 3h-1V4h3v1c0 1.1-.9 2-2 2z"/></svg> RECORD WIN</h3>
+                        <form id="record-win-form" class="space-y-4">
+                            <p class="text-xs text-slate-500">Enter the loser's card code to verify your victory.</p>
+                            <input id="opp-code" placeholder="OPPONENT CARD CODE" required class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
+                            <button class="w-full bg-blue-600 py-4 rounded-xl font-black hover:bg-blue-500 transition-colors">CONFIRM WIN</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800">
+                        <h3 class="text-lg font-black mb-4 flex items-center gap-2 text-green-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> ADD TO VAULT</h3>
+                        <form id="register-card-form" class="space-y-4">
+                            <input id="reg-code" placeholder="YOUR CARD CODE" required class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-green-500" />
+                            <button class="w-full bg-slate-800 py-4 rounded-xl font-black border border-slate-700 hover:bg-slate-700 transition-colors">REGISTER CARD</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Collection View -->
+        <section id="tab-collection" class="tab-content">
+            <h2 class="text-3xl font-black mb-8 uppercase tracking-tighter text-blue-400">Your Vault</h2>
+            <div id="collection-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="col-span-full py-20 text-center text-slate-500 border border-dashed border-slate-800 rounded-3xl">
+                    Please login to see your cards.
+                </div>
+            </div>
+        </section>
+
+        <!-- Guide View -->
+        <section id="tab-guide" class="tab-content">
+            <div class="max-w-3xl mx-auto space-y-12 pb-20">
+                <h2 class="text-4xl font-black mb-8 flex items-center gap-4 text-blue-500 uppercase">System Guide</h2>
+                <div class="space-y-6">
+                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                        <h3 class="text-xl font-black mb-4 text-blue-400">Winning & Codes</h3>
+                        <p class="text-slate-400 leading-relaxed">
+                            Every card has a unique code. When you win a match, enter the opponent's code in the "Record Win" section. 
+                            The system will verify the card exists and award you a Victory point.
+                        </p>
+                    </div>
+                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                        <h3 class="text-xl font-black mb-4 text-green-400">Vault Registration</h3>
+                        <p class="text-slate-400 leading-relaxed">
+                            Add your physical cards to your digital vault by entering their codes. This ensures no one else can claim your specific card as their own victory target.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI",
+            authDomain: "triplepower-8dca6.firebaseapp.com",
+            projectId: "triplepower-8dca6",
+            storageBucket: "triplepower-8dca6.firebasestorage.app",
+            messagingSenderId: "73414403539",
+            appId: "1:73414403539:web:d54faef95d2709a78e3b26",
+            measurementId: "G-F8DJF08MQF"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'triplepower-v1';
+
+        // --- Master Data ---
+        const CARDS_DB = {
+            "001": { name: "Ground Graveler", type: "Nature", level: 1, special: "Focused Training" },
+            "002": { name: "Tiny", type: "Nature", level: 1, special: "Underdog Mentality" },
+            "003": { name: "Vine Thrasher", type: "Nature", level: 2, special: "Set My Own Rules" },
+            "004": { name: "Bush Beast", type: "Nature", level: 2, special: "Reinforcements" },
+            "005": { name: "Villager", type: "Village", level: 1, special: "Battle Ready" },
+            "006": { name: "Realo", type: "Village", level: 1, special: "Rescue Mission" },
+            "007": { name: "Warrior", type: "Village", level: 2, special: "Bonus Training" },
+            "008": { name: "Target Shielder", type: "Village", level: 2, special: "Narrow It Down" },
+            "009": { name: "Mudster", type: "Nature", level: 3, special: "First Come First Serve" }
+        };
+
+        const BATTLEFIELDS = [
+            { name: "Overgrown Forest", type: "Nature", attributes: ["Strength", "Agility", "Stamina"] },
+            { name: "Ancient Village", type: "Village", attributes: ["Intelligence", "Strategy", "Skill"] },
+            { name: "Magma Crater", type: "Flame", attributes: ["Stamina", "Strength", "Health"] },
+            { name: "Dusty Arena", type: "Nature", attributes: ["Speed", "Accuracy", "Creativity"] },
+            { name: "Royal Court", type: "Village", attributes: ["Strategy", "Intelligence", "Skill"] }
+        ];
+
+        const SPECIALS = {
+            "Focused Training": "Add two to the attribute total",
+            "Underdog Mentality": "Add two to the attribute total",
+            "Set My Own Rules": "Best attribute included with others",
+            "Reinforcements": "For every card of same type on team add 1 to total",
+            "Battle Ready": "Every attribute increases by 1",
+            "Rescue Mission": "Subtract 3 from total but regain last card lost",
+            "Bonus Training": "Add 5 to cards strongest overall attribute",
+            "Narrow It Down": "Select only 2 attributes to count for both players",
+            "First Come First Serve": "If this card wins, it can be swapped after seeing next arena"
+        };
+
+        let currentUser = null;
+        let isLoginMode = true;
+
+        // --- Global Functions ---
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.replace('text-blue-400', 'text-slate-500'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            const btn = document.getElementById(`btn-${tabId}`);
+            if (btn) btn.classList.replace('text-slate-500', 'text-blue-400');
+        };
+
+        window.toggleAuthMode = () => {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').innerText = isLoginMode ? 'Welcome Back' : 'Join the Quest';
+            document.getElementById('auth-username').classList.toggle('hidden', isLoginMode);
+            document.getElementById('auth-toggle').innerText = isLoginMode ? "Need an account? Sign Up" : "Already have an account? Sign In";
+        };
+
+        window.showToast = (text, isError = false) => {
+            const toast = document.getElementById('toast');
+            toast.innerText = text;
+            toast.className = `fixed top-4 right-4 z-50 p-4 rounded-xl border shadow-2xl transition-all duration-300 ${isError ? 'bg-red-900 border-red-500' : 'bg-blue-900 border-blue-500'}`;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-20px)'; }, 3000);
+        };
+
+        window.nextBattlefield = () => {
+            const random = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
+            document.getElementById('arena-name').innerText = random.name;
+            document.getElementById('arena-type').innerText = `TYPE: ${random.type.toUpperCase()}`;
+            document.getElementById('arena-attrs').innerHTML = random.attributes.map(a => `<div class="bg-slate-950 px-6 py-3 rounded-xl border border-slate-800 font-bold text-white shadow-inner">${a}</div>`).join('');
+            document.getElementById('specials-panel').classList.add('hidden');
+        };
+
+        window.toggleSpecials = () => {
+            document.getElementById('specials-panel').classList.toggle('hidden');
+        };
+
+        // --- Authentication ---
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const username = document.getElementById('auth-username').value;
+
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    const cred = await createUserWithEmailAndPassword(auth, email, password);
+                    await updateProfile(cred.user, { displayName: username });
+                    await setDoc(doc(db, 'artifacts', appId, 'users', cred.user.uid, 'profile', 'data'), {
+                        username, wins: 0, joinedAt: Date.now()
+                    });
+                }
+                switchTab('battle');
+                showToast("Connected to the TriplePower grid.");
+            } catch (err) { showToast(err.message, true); }
+        });
+
+        auth.onAuthStateChanged(user => {
+            currentUser = user;
+            const userNav = document.getElementById('user-nav');
+            if (user) {
+                userNav.innerHTML = `
+                    <div class="text-right mr-4 hidden sm:block">
+                        <div class="text-sm font-bold" id="nav-username">${user.displayName || 'Player'}</div>
+                        <div class="text-[10px] text-blue-400 uppercase tracking-widest" id="nav-wins">0 Victories</div>
+                    </div>
+                    <button id="logout-btn" class="p-2 hover:bg-slate-800 rounded-lg text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg></button>
+                `;
+                document.getElementById('logout-btn').onclick = () => signOut(auth);
+                
+                // Profile Listener
+                onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), (snap) => {
+                    if (snap.exists()) {
+                        document.getElementById('nav-wins').innerText = `${snap.data().wins} Victories`;
+                        document.getElementById('nav-username').innerText = snap.data().username;
+                    }
+                });
+
+                // Collection Listener
+                onSnapshot(query(collection(db, 'artifacts', appId, 'public', 'data', 'registrations'), where('ownerId', '==', user.uid)), (snap) => {
+                    const grid = document.getElementById('collection-grid');
+                    if (snap.empty) {
+                        grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-500 border border-dashed border-slate-800 rounded-3xl">No cards in your vault yet.</div>`;
+                    } else {
+                        grid.innerHTML = snap.docs.map(doc => {
+                            const c = doc.data();
+                            return `<div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden hover:border-blue-500 transition-all">
+                                <div class="h-1 bg-blue-600"></div>
+                                <div class="p-6">
+                                    <div class="text-[10px] font-black text-blue-500 mb-1 uppercase tracking-widest">${c.type}</div>
+                                    <h4 class="text-xl font-black mb-4 truncate">${c.cardName}</h4>
+                                    <div class="bg-slate-950 p-2 rounded text-center font-mono text-xs text-slate-400 border border-slate-800 uppercase">CODE: ${c.code}</div>
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
+                });
+            } else {
+                userNav.innerHTML = `<button onclick="switchTab('auth')" class="bg-blue-600 px-4 py-2 rounded-lg font-bold text-sm">Login</button>`;
+            }
+        });
+
+        // --- Game Logic ---
+        document.getElementById('register-card-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return showToast("Login required", true);
+            const code = document.getElementById('reg-code').value.trim().toUpperCase();
+            
+            // Generate a card ID based on the code for demo purposes (e.g., first 3 chars)
+            // In a real app, this would be a lookup table
+            const cardId = "00" + (Math.floor(Math.random() * 9) + 1);
+            const cardInfo = CARDS_DB[cardId] || CARDS_DB["001"];
+
+            try {
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'registrations', code);
+                const snap = await getDoc(ref);
+                if (snap.exists()) return showToast("Already registered", true);
+                
+                await setDoc(ref, {
+                    code,
+                    cardName: cardInfo.name,
+                    type: cardInfo.type,
+                    ownerId: currentUser.uid,
+                    registeredAt: Date.now()
+                });
+                showToast("Card secured in vault!");
+                e.target.reset();
+            } catch (err) { showToast(err.message, true); }
+        });
+
+        document.getElementById('record-win-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return showToast("Login required", true);
+            const oppCode = document.getElementById('opp-code').value.trim().toUpperCase();
+            
+            try {
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'registrations', oppCode);
+                const snap = await getDoc(ref);
+                if (!snap.exists()) return showToast("Card not found", true);
+                
+                await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'), { wins: increment(1) });
+                showToast("Victory recorded!");
+                e.target.reset();
+            } catch (err) { showToast(err.message, true); }
+        });
+
+        // Init UI
+        nextBattlefield();
+        document.getElementById('specials-list').innerHTML = Object.entries(SPECIALS).map(([k, v]) => `
+            <div class="flex flex-col sm:flex-row gap-2 border-l-4 border-blue-600 bg-slate-900 p-4 rounded-r-xl">
+                <span class="font-black text-blue-400 min-w-[180px]">${k}</span>
+                <span class="text-slate-400 text-sm">${v}</span>
+            </div>
+        `).join('');
+
+    </script>
+</body>
+</html>
