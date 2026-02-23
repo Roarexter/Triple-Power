@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TriplePower | Digital Card Game</title>
+    <title>TriplePower | Digital Arena</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <style>
@@ -12,196 +12,125 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .glass { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(12px); }
-        .card-glow:hover { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); transform: translateY(-5px); }
-        .loading-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        .card-node { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-node:hover { transform: translateY(-5px) scale(1.02); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+        .loading-ring { border: 4px solid rgba(59, 130, 246, 0.1); border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-blue-500/30">
+<body class="bg-slate-950 text-slate-100 min-h-screen">
 
     <!-- Global Navigation -->
-    <nav id="main-nav" class="hidden border-b border-slate-800 bg-slate-900/50 glass sticky top-0 z-50 h-16 flex items-center px-6 justify-between">
-        <div class="flex items-center gap-6">
-            <div class="flex items-center gap-2 font-black text-xl text-blue-400 font-game cursor-pointer" onclick="navigateTo('home')">
-                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+    <nav class="border-b border-slate-800 bg-slate-900/50 glass sticky top-0 z-50 h-20 flex items-center px-8 justify-between">
+        <div class="flex items-center gap-8">
+            <div class="flex items-center gap-2 font-black text-2xl text-blue-500 font-game cursor-pointer" onclick="navigateTo('home')">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
                 <span>TRIPLEPOWER</span>
             </div>
-            <div class="hidden md:flex gap-4">
-                <button onclick="navigateTo('home')" class="nav-link px-3 py-2 font-bold text-sm text-slate-400 hover:text-white transition-colors">HOME</button>
-                <button onclick="navigateTo('vault')" class="nav-link px-3 py-2 font-bold text-sm text-slate-400 hover:text-white transition-colors">VAULT</button>
-                <button onclick="navigateTo('guide')" class="nav-link px-3 py-2 font-bold text-sm text-slate-400 hover:text-white transition-colors">GUIDE</button>
+            <div id="nav-links" class="hidden md:flex gap-1">
+                <button onclick="navigateTo('home')" class="px-4 py-2 font-bold text-sm text-slate-400 hover:text-white transition-all rounded-lg hover:bg-slate-800">HOME</button>
+                <button onclick="navigateTo('vault')" class="px-4 py-2 font-bold text-sm text-slate-400 hover:text-white transition-all rounded-lg hover:bg-slate-800">VAULT</button>
+                <button onclick="navigateTo('guide')" class="px-4 py-2 font-bold text-sm text-slate-400 hover:text-white transition-all rounded-lg hover:bg-slate-800">HOW TO PLAY</button>
             </div>
         </div>
-        <div id="user-display" class="flex items-center gap-4">
-            <!-- Populated by Auth -->
+        <div id="auth-corner">
+            <!-- Populated by JS -->
+            <button onclick="navigateTo('auth')" class="bg-blue-600 px-6 py-2.5 rounded-xl font-black text-sm hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all uppercase tracking-wider">Login</button>
         </div>
     </nav>
 
-    <!-- Toast UI -->
-    <div id="toast" class="fixed bottom-6 right-6 z-[100] p-4 rounded-xl border shadow-2xl transition-all opacity-0 translate-y-10 pointer-events-none"></div>
-
-    <!-- Main Container -->
     <main class="relative">
         
-        <!-- 1. LANDING/AUTH VIEW -->
-        <section id="view-auth" class="tab-content active min-h-screen flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-slate-950 to-slate-950">
-            <div class="text-center mb-12">
-                <div class="inline-block p-4 rounded-3xl bg-blue-600/10 border border-blue-500/30 mb-6">
-                    <svg class="w-16 h-16 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
-                </div>
-                <h1 class="text-6xl font-black font-game tracking-tighter mb-4">TRIPLEPOWER</h1>
-                <p class="text-slate-400 text-lg max-w-md mx-auto">The ultimate digital card battle arena. Collect, Strategize, and Conquer.</p>
-            </div>
-
-            <div class="w-full max-w-md glass p-8 rounded-3xl border border-slate-800 shadow-2xl">
-                <div id="auth-ui">
-                    <h2 id="auth-title" class="text-2xl font-black mb-6 uppercase text-center">Login to get started</h2>
-                    <form id="auth-form" class="space-y-4">
-                        <input id="auth-username" placeholder="Agent Name" class="hidden w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
-                        <input id="auth-email" type="email" placeholder="Email Address" required class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
-                        <input id="auth-password" type="password" placeholder="Password" required class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500" />
-                        <button type="submit" class="w-full bg-blue-600 py-4 rounded-xl font-black shadow-lg shadow-blue-900/40 hover:bg-blue-500 transition-all uppercase tracking-widest">Access Arena</button>
-                    </form>
-                    <button onclick="toggleAuthMode()" id="auth-toggle" class="w-full mt-6 text-slate-500 text-sm font-bold hover:text-blue-400 transition-colors">
-                        New Agent? Create Account
-                    </button>
-                </div>
+        <!-- LANDING VIEW (For Unauthenticated) -->
+        <section id="view-landing" class="tab-content active flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-6 text-center">
+            <div class="max-w-2xl">
+                <h1 class="text-7xl font-black font-game mb-6 tracking-tighter leading-none bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent">THE ARENA AWAITS</h1>
+                <p class="text-xl text-slate-400 mb-10 leading-relaxed">Login to get started. Build your deck, enter matchmaking, and win your opponent's cards in real-time battles.</p>
+                <button onclick="navigateTo('auth')" class="bg-white text-black px-12 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-transform uppercase tracking-tighter shadow-2xl shadow-white/10">Access System</button>
             </div>
         </section>
 
-        <!-- 2. HOME / LOBBY VIEW -->
-        <section id="view-home" class="tab-content max-w-4xl mx-auto py-12 px-6">
-            <div class="bg-slate-900 rounded-[3rem] p-12 border border-slate-800 text-center relative overflow-hidden shadow-2xl">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
+        <!-- AUTH MODAL/VIEW -->
+        <section id="view-auth" class="tab-content flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-6">
+            <div class="w-full max-w-md bg-slate-900 p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-blue-500"></div>
+                <h2 id="auth-title" class="text-3xl font-black mb-8 uppercase text-center font-game">Login</h2>
+                <form id="auth-form" class="space-y-4">
+                    <input id="auth-username" placeholder="Agent Name" class="hidden w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                    <input id="auth-email" type="email" placeholder="Email" required class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                    <input id="auth-password" type="password" placeholder="Password" required class="w-full bg-slate-950 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-white" />
+                    <button type="submit" class="w-full bg-blue-600 py-4 rounded-xl font-black shadow-xl shadow-blue-900/40 hover:bg-blue-500 transition-all uppercase tracking-widest mt-4">Execute</button>
+                </form>
+                <button onclick="toggleAuthMode()" id="auth-toggle" class="w-full mt-8 text-slate-500 text-sm font-bold hover:text-blue-400">New Agent? Register</button>
+            </div>
+        </section>
+
+        <!-- LOBBY VIEW -->
+        <section id="view-home" class="tab-content max-w-4xl mx-auto py-16 px-6">
+            <div class="bg-slate-900 rounded-[3rem] p-16 border border-slate-800 text-center relative shadow-2xl overflow-hidden">
                 <div class="relative z-10">
-                    <h2 class="text-5xl font-black font-game mb-4 uppercase tracking-tighter">Ready for Battle?</h2>
-                    <p class="text-slate-400 mb-10 text-lg">Enter the matchmaking queue to find an opponent.</p>
+                    <h2 class="text-6xl font-black font-game mb-6 uppercase tracking-tighter">Enter Combat</h2>
+                    <p class="text-slate-400 mb-12 text-lg">Your synchronized deck is ready. Searching for available opponents in the global grid.</p>
                     
-                    <div id="lobby-actions" class="flex flex-col items-center gap-6">
-                        <button id="btn-start-match" onclick="startMatchmaking()" class="group relative px-12 py-6 bg-blue-600 rounded-2xl font-black text-2xl shadow-xl shadow-blue-900/40 hover:scale-105 active:scale-95 transition-all">
+                    <div id="lobby-actions">
+                        <button onclick="startMatchmaking()" class="group relative px-16 py-8 bg-blue-600 rounded-3xl font-black text-3xl shadow-2xl shadow-blue-900/40 hover:scale-105 active:scale-95 transition-all">
                             <span class="relative z-10 uppercase tracking-widest">Start Match</span>
-                            <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity rounded-2xl"></div>
                         </button>
                     </div>
 
-                    <div id="matchmaking-ui" class="hidden flex flex-col items-center gap-6 mt-4">
-                        <div class="w-20 h-20 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                        <p class="text-xl font-bold loading-pulse text-blue-400 uppercase tracking-widest">Searching for Opponent...</p>
+                    <div id="matchmaking-ui" class="hidden flex flex-col items-center gap-8">
+                        <div class="loading-ring"></div>
+                        <p class="text-xl font-bold text-blue-400 uppercase tracking-[0.2em] animate-pulse">Scanning Grid...</p>
                         <button onclick="cancelMatchmaking()" class="text-slate-500 hover:text-red-400 font-bold uppercase text-sm">Cancel Search</button>
                     </div>
                 </div>
             </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
-                <div class="bg-slate-900/50 p-8 rounded-3xl border border-slate-800">
-                    <h3 class="font-black text-blue-400 uppercase mb-2">Quick Stats</h3>
-                    <div class="flex justify-between items-end">
-                        <div>
-                            <p class="text-sm text-slate-500 uppercase">Victories</p>
-                            <p id="stat-wins" class="text-4xl font-black font-game">0</p>
-                        </div>
-                        <button onclick="navigateTo('vault')" class="text-sm font-bold text-slate-400 hover:text-white">View Collection →</button>
-                    </div>
-                </div>
-                <div class="bg-slate-900/50 p-8 rounded-3xl border border-slate-800">
-                    <h3 class="font-black text-yellow-500 uppercase mb-2">Recent Achievement</h3>
-                    <p class="text-sm text-slate-400">Welcome to the digital era! Your initial deck has been synchronized to the cloud.</p>
-                </div>
-            </div>
         </section>
 
-        <!-- 3. GAME BOARD VIEW -->
-        <section id="view-game" class="tab-content fixed inset-0 z-[60] bg-slate-950 p-4 md:p-8">
-            <div id="game-ui" class="h-full max-w-7xl mx-auto flex flex-col">
-                <!-- Arena Header -->
-                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 mb-6 flex items-center justify-between">
-                    <div id="game-arena-info" class="flex items-center gap-6">
-                        <!-- Arena details here -->
-                    </div>
-                    <div id="game-timer" class="text-2xl font-black font-game text-yellow-500">
-                        --
-                    </div>
-                </div>
-
-                <!-- Battle Area -->
-                <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-                    <!-- Opponent Side -->
-                    <div class="flex flex-col items-center gap-4">
-                        <div id="opp-card-slot" class="w-64 h-80 rounded-3xl border-2 border-dashed border-slate-800 flex items-center justify-center text-slate-700 font-black uppercase text-center p-8">
-                            Waiting for opponent...
-                        </div>
-                        <div class="text-center">
-                            <p id="opp-name" class="font-black text-slate-400 uppercase">Enemy Agent</p>
-                            <p id="opp-status" class="text-xs text-slate-600 uppercase">Thinking...</p>
-                        </div>
-                    </div>
-
-                    <!-- VS Center -->
-                    <div class="text-center py-10">
-                        <div class="text-8xl font-black font-game text-slate-800 select-none">VS</div>
-                        <div id="match-result-overlay" class="hidden mt-4 text-2xl font-black uppercase text-blue-500"></div>
-                    </div>
-
-                    <!-- Player Side -->
-                    <div class="flex flex-col items-center gap-4">
-                        <div id="player-card-slot" class="w-64 h-80 rounded-3xl border-2 border-dashed border-blue-500/20 bg-blue-500/5 flex items-center justify-center text-blue-500/30 font-black uppercase text-center p-8">
-                            Select a Card Below
-                        </div>
-                        <div class="text-center">
-                            <p id="player-name-game" class="font-black text-white uppercase">You</p>
-                            <p id="player-status" class="text-xs text-blue-500 uppercase">Your Turn</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Hand / Action Bar -->
-                <div class="mt-8 bg-slate-900/80 glass p-6 rounded-t-[3rem] border-t border-x border-slate-800">
-                    <h4 class="text-center text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Choose Your Card</h4>
-                    <div id="game-hand" class="flex gap-4 overflow-x-auto pb-4 justify-center px-4">
-                        <!-- Cards from player collection -->
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 4. VAULT / COLLECTION VIEW -->
+        <!-- VAULT VIEW -->
         <section id="view-vault" class="tab-content max-w-6xl mx-auto py-12 px-6">
-            <div class="flex justify-between items-end mb-10">
+            <div class="flex justify-between items-end mb-12">
                 <div>
-                    <h2 class="text-4xl font-black font-game uppercase">Your Vault</h2>
-                    <p class="text-slate-400">Manage your digital collection.</p>
+                    <h2 class="text-5xl font-black font-game uppercase">The Vault</h2>
+                    <p class="text-slate-400">Digital ownership synchronized to your Agent ID.</p>
                 </div>
-                <div class="bg-slate-900 px-6 py-3 rounded-2xl border border-slate-800 flex gap-8">
-                    <div class="text-center">
-                        <p class="text-[10px] text-slate-500 uppercase font-black">Total Cards</p>
-                        <p id="vault-count" class="font-black text-blue-500">0</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-[10px] text-slate-500 uppercase font-black">Level Progress</p>
-                        <p class="font-black text-yellow-500">EXP 0</p>
-                    </div>
+                <div id="vault-stats" class="bg-slate-900 px-8 py-4 rounded-2xl border border-slate-800 flex gap-12">
+                    <!-- Stats populated by JS -->
                 </div>
             </div>
-            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Collection populated here -->
-            </div>
+            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
         </section>
 
-        <!-- 5. GUIDE VIEW -->
-        <section id="view-guide" class="tab-content max-w-3xl mx-auto py-12 px-6">
-            <h2 class="text-4xl font-black font-game uppercase mb-8">How to Play</h2>
-            <div class="space-y-6">
-                <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                    <h3 class="text-xl font-black text-blue-400 mb-4 uppercase">1. THE ARENA</h3>
-                    <p class="text-slate-400 leading-relaxed">Each match begins in a random Arena (like Jungle Fortress or Town Center). Every arena has a <strong>Type</strong> (Nature, Village, etc.) and exactly <strong>Three Attributes</strong> that count for that round.</p>
+        <!-- GAME VIEW -->
+        <section id="view-game" class="tab-content fixed inset-0 z-[60] bg-slate-950 p-6">
+            <div class="h-full max-w-7xl mx-auto flex flex-col">
+                <div id="game-header" class="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex justify-between items-center mb-6">
+                    <!-- Arena details -->
                 </div>
-                <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                    <h3 class="text-xl font-black text-yellow-400 mb-4 uppercase">2. SPECIALS</h3>
-                    <p class="text-slate-400 leading-relaxed">If your card's <strong>Type</strong> matches the <strong>Arena Type</strong>, your card's Special ability will activate automatically. Use this to gain an advantage!</p>
+
+                <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+                    <!-- Opponent -->
+                    <div class="flex flex-col items-center gap-6">
+                        <div id="opp-card-slot" class="w-72 h-96 rounded-[2rem] border-2 border-dashed border-slate-800 flex items-center justify-center text-slate-700 font-black uppercase text-center p-10">Waiting...</div>
+                        <p id="opp-name" class="font-black text-slate-500 uppercase tracking-widest">Enemy Agent</p>
+                    </div>
+
+                    <!-- Middle -->
+                    <div class="text-center">
+                        <div class="text-9xl font-black font-game text-slate-900 select-none opacity-50">VS</div>
+                        <div id="match-result-overlay" class="hidden text-5xl font-black font-game"></div>
+                    </div>
+
+                    <!-- Player -->
+                    <div class="flex flex-col items-center gap-6">
+                        <div id="player-card-slot" class="w-72 h-96 rounded-[2rem] border-2 border-dashed border-blue-900/30 bg-blue-900/5 flex items-center justify-center text-blue-500/30 font-black uppercase text-center p-10">Select Card</div>
+                        <p id="player-name-game" class="font-black text-white uppercase tracking-widest">Agent You</p>
+                    </div>
                 </div>
-                <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                    <h3 class="text-xl font-black text-green-400 mb-4 uppercase">3. WINNING</h3>
-                    <p class="text-slate-400 leading-relaxed">The player with the highest total in the three allowed attributes wins. The winner claims the loser's card! A player is out when they have no cards left.</p>
+
+                <!-- Action Bar -->
+                <div class="mt-8 bg-slate-900/90 glass p-8 rounded-t-[3.5rem] border-t border-slate-800">
+                    <div id="game-hand" class="flex gap-4 overflow-x-auto justify-center"></div>
                 </div>
             </div>
         </section>
@@ -211,202 +140,169 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteDoc, increment, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, onSnapshot, updateDoc, deleteDoc, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI",
             authDomain: "triplepower-8dca6.firebaseapp.com",
             projectId: "triplepower-8dca6",
             storageBucket: "triplepower-8dca6.firebasestorage.app",
             messagingSenderId: "73414403539",
-            appId: "1:73414403539:web:d54faef95d2709a78e3b26",
-            measurementId: "G-F8DJF08MQF"
+            appId: "1:73414403539:web:d54faef95d2709a78e3b26"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'triplepower-v2-online';
+        const appId = 'triplepower-v3';
 
-        // GAME CONSTANTS
-        const BATTLEFIELDS = [
+        // CARDS DATA
+        const STARTER_CARDS = [
+            { name: "Ground Graveler", type: "Nature", special: "Focused Training", stats: { Strength: 5, Speed: 15, Agility: 14, Health: 7, Intelligence: 6, Creativity: 13, Accuracy: 10, Stamina: 12, Skill: 8, Strategy: 10 } },
+            { name: "Tiny", type: "Nature", special: "Underdog Mentality", stats: { Strength: 6, Speed: 16, Agility: 19, Health: 7, Intelligence: 9, Creativity: 12, Accuracy: 8, Stamina: 10, Skill: 8, Strategy: 5 } },
+            { name: "Vine Thrasher", type: "Nature", special: "Set My Own Rules", stats: { Strength: 16, Speed: 7, Agility: 11, Health: 8, Intelligence: 12, Creativity: 11, Accuracy: 4, Stamina: 9, Skill: 14, Strategy: 13 } },
+            { name: "Bush Beast", type: "Nature", special: "Reinforcements", stats: { Strength: 7, Speed: 16, Agility: 13, Health: 4, Intelligence: 6, Creativity: 14, Accuracy: 12, Stamina: 8, Skill: 7, Strategy: 18 } },
+            { name: "Villager", type: "Village", special: "Battle Ready", stats: { Strength: 7, Speed: 12, Agility: 11, Health: 15, Intelligence: 11, Creativity: 9, Accuracy: 10, Stamina: 13, Skill: 7, Strategy: 5 } },
+            { name: "Realo", type: "Village", special: "Rescue Mission", stats: { Strength: 10, Speed: 9, Agility: 9, Health: 8, Intelligence: 13, Creativity: 13, Accuracy: 8, Stamina: 11, Skill: 8, Strategy: 11 } },
+            { name: "Warrior", type: "Village", special: "Bonus Training", stats: { Strength: 18, Speed: 13, Agility: 8, Health: 8, Intelligence: 5, Creativity: 7, Accuracy: 12, Stamina: 13, Skill: 12, Strategy: 9 } },
+            { name: "Target Shielder", type: "Village", special: "Narrow It Down", stats: { Strength: 4, Speed: 9, Agility: 6, Health: 22, Intelligence: 5, Creativity: 7, Accuracy: 17, Stamina: 12, Skill: 8, Strategy: 15 } }
+        ];
+
+        const ARENAS = [
             { name: "Jungle Fortress", type: "Nature", attributes: ["Strength", "Agility", "Stamina"] },
             { name: "Underground Den", type: "Nature", attributes: ["Speed", "Accuracy", "Creativity"] },
             { name: "Tower Takedown", type: "Village", attributes: ["Strategy", "Intelligence", "Skill"] },
             { name: "Town Center", type: "Village", attributes: ["Intelligence", "Strategy", "Health"] }
         ];
 
-        const INITIAL_DECK = [
-            { id: "C001", name: "Ground Graveler", type: "Nature", stats: { Strength: 5, Speed: 15, Agility: 14, Health: 7, Intelligence: 6, Creativity: 13, Accuracy: 10, Stamina: 12, Skill: 8, Strategy: 10 }, special: "Focused Training" },
-            { id: "C002", name: "Tiny", type: "Nature", stats: { Strength: 6, Speed: 16, Agility: 19, Health: 7, Intelligence: 9, Creativity: 12, Accuracy: 8, Stamina: 10, Skill: 8, Strategy: 5 }, special: "Underdog Mentality" },
-            { id: "C003", name: "Villager", type: "Village", stats: { Strength: 7, Speed: 12, Agility: 11, Health: 15, Intelligence: 11, Creativity: 9, Accuracy: 10, Stamina: 13, Skill: 7, Strategy: 5 }, special: "Battle Ready" }
-        ];
-
-        // STATE
         let currentUser = null;
         let isLoginMode = true;
-        let currentMatchId = null;
-        let matchUnsub = null;
         let myCollection = [];
+        let activeMatchId = null;
+        let matchUnsub = null;
 
         // NAVIGATION
         window.navigateTo = (viewId) => {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${viewId}`).classList.add('active');
             
-            // Highlight nav
-            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('text-blue-400', 'border-b-2', 'border-blue-500'));
-            const navLink = [...document.querySelectorAll('.nav-link')].find(el => el.innerText.toLowerCase() === viewId);
-            if(navLink) navLink.classList.add('text-blue-400', 'border-b-2', 'border-blue-500');
+            // Auto-fallback if logged in and trying to go to landing
+            if(viewId === 'landing' && currentUser) navigateTo('home');
         };
 
         window.toggleAuthMode = () => {
             isLoginMode = !isLoginMode;
-            document.getElementById('auth-title').innerText = isLoginMode ? 'Login to get started' : 'Join the Arena';
+            document.getElementById('auth-title').innerText = isLoginMode ? 'Login' : 'Registration';
             document.getElementById('auth-username').classList.toggle('hidden', isLoginMode);
-            document.getElementById('auth-toggle').innerText = isLoginMode ? "New Agent? Create Account" : "Already an Agent? Sign In";
+            document.getElementById('auth-toggle').innerText = isLoginMode ? 'New Agent? Register' : 'Already an Agent? Login';
         };
 
-        window.showToast = (msg, err = false) => {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.className = `fixed bottom-6 right-6 z-[100] p-4 rounded-xl border shadow-2xl transition-all duration-300 ${err ? 'bg-red-900 border-red-500 text-white' : 'bg-blue-900 border-blue-500 text-white'}`;
-            t.style.opacity = '1';
-            t.style.transform = 'translateY(0)';
-            setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(10px)'; }, 3000);
-        };
-
-        // AUTH LOGIC
+        // AUTH
         document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
             const username = document.getElementById('auth-username').value;
-            
             try {
                 if (isLoginMode) {
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
                     const cred = await createUserWithEmailAndPassword(auth, email, password);
                     await updateProfile(cred.user, { displayName: username });
-                    // Create Profile & Initial Deck
                     await setDoc(doc(db, 'artifacts', appId, 'users', cred.user.uid, 'profile', 'data'), {
-                        username, wins: 0, cards: INITIAL_DECK.map(c => ({...c, instanceId: crypto.randomUUID()}))
+                        username, wins: 0, cards: STARTER_CARDS.map(c => ({...c, instanceId: crypto.randomUUID()}))
                     });
                 }
-                showToast("Identity Verified.");
-            } catch (err) { showToast(err.message, true); }
+                navigateTo('home');
+            } catch (err) { alert(err.message); }
         });
 
         onAuthStateChanged(auth, user => {
             currentUser = user;
+            const authCorner = document.getElementById('auth-corner');
+            const navLinks = document.getElementById('nav-links');
+
             if (user) {
-                document.getElementById('main-nav').classList.remove('hidden');
-                document.getElementById('user-display').innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="text-right hidden sm:block">
+                authCorner.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
                             <div class="text-xs font-black text-white uppercase">${user.displayName}</div>
-                            <div class="text-[10px] text-blue-400 font-bold" id="nav-stat-wins">0 WINS</div>
+                            <div class="text-[10px] text-blue-500 font-bold" id="nav-wins">0 WINS</div>
                         </div>
-                        <button onclick="handleSignOut()" class="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center hover:bg-red-900/20 group transition-all border border-slate-700">
-                             <span class="group-hover:hidden font-black">${user.displayName[0].toUpperCase()}</span>
-                             <span class="hidden group-hover:block text-red-500 text-xs">OFF</span>
+                        <button onclick="handleSignOut()" class="w-12 h-12 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center hover:bg-red-900/10 transition-colors group">
+                             <span class="group-hover:hidden font-black font-game text-blue-500">${user.displayName[0].toUpperCase()}</span>
+                             <span class="hidden group-hover:block text-red-500 text-[10px] font-black uppercase">Exit</span>
                         </button>
                     </div>
                 `;
+                navLinks.classList.remove('hidden');
                 
-                // Load Data
                 onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), snap => {
-                    if(snap.exists()){
+                    if (snap.exists()) {
                         const data = snap.data();
                         myCollection = data.cards || [];
-                        document.getElementById('nav-stat-wins').innerText = `${data.wins} WINS`;
-                        document.getElementById('stat-wins').innerText = data.wins;
-                        document.getElementById('vault-count').innerText = myCollection.length;
-                        renderVault();
+                        document.getElementById('nav-wins').innerText = `${data.wins} WINS`;
+                        renderVault(data);
                     }
                 });
-                
                 navigateTo('home');
             } else {
-                document.getElementById('main-nav').classList.add('hidden');
-                navigateTo('auth');
+                authCorner.innerHTML = `<button onclick="navigateTo('auth')" class="bg-blue-600 px-6 py-2.5 rounded-xl font-black text-sm hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all uppercase tracking-wider">Login</button>`;
+                navLinks.classList.add('hidden');
+                navigateTo('landing');
             }
         });
 
         window.handleSignOut = () => signOut(auth);
 
-        // VAULT RENDER
-        function renderVault() {
+        function renderVault(data) {
             const grid = document.getElementById('vault-grid');
-            if (myCollection.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-500 border border-dashed border-slate-800 rounded-3xl">VAULT EMPTY</div>`;
-                return;
-            }
+            const stats = document.getElementById('vault-stats');
+            stats.innerHTML = `
+                <div class="text-center"><p class="text-[10px] text-slate-500 uppercase font-black">Cards</p><p class="font-black text-blue-500">${myCollection.length}</p></div>
+                <div class="text-center"><p class="text-[10px] text-slate-500 uppercase font-black">Rank</p><p class="font-black text-yellow-500">AGENT</p></div>
+            `;
             grid.innerHTML = myCollection.map(c => `
-                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 card-glow transition-all">
-                    <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">${c.type}</p>
-                    <h4 class="text-xl font-black mb-4">${c.name}</h4>
-                    <div class="space-y-1">
-                        <div class="flex justify-between text-[10px] uppercase font-bold text-slate-500">
-                            <span>Special</span>
-                            <span class="text-yellow-500">${c.special}</span>
-                        </div>
+                <div class="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 card-node">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="text-[10px] font-black px-3 py-1 bg-blue-500/10 text-blue-500 rounded-full border border-blue-500/20 uppercase tracking-widest">${c.type}</span>
+                    </div>
+                    <h4 class="text-2xl font-black mb-6 font-game">${c.name}</h4>
+                    <div class="space-y-2 border-t border-slate-800 pt-4">
+                        <p class="text-[10px] uppercase font-black text-slate-500">Special Ability</p>
+                        <p class="text-sm font-bold text-yellow-500">${c.special}</p>
                     </div>
                 </div>
             `).join('');
         }
 
-        // MATCHMAKING LOGIC
+        // MATCHMAKING
         window.startMatchmaking = async () => {
-            if(myCollection.length === 0) return showToast("You need cards to battle!", true);
-            
             document.getElementById('lobby-actions').classList.add('hidden');
             document.getElementById('matchmaking-ui').classList.remove('hidden');
 
-            const queueRef = collection(db, 'artifacts', appId, 'public', 'data', 'queue');
-            const q = query(queueRef);
-            
-            // Look for existing player
-            const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'current'));
+            const queueDoc = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'active');
+            const snap = await getDoc(queueDoc);
             const data = snap.data();
 
             if (data && data.player1 && data.player1 !== currentUser.uid) {
-                // Join Match
-                const matchId = data.player1 + '_' + currentUser.uid;
-                const arena = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
-                
+                // Opponent found
+                const matchId = `${data.player1}_${currentUser.uid}`;
+                const arena = ARENAS[Math.floor(Math.random() * ARENAS.length)];
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), {
-                    player1: data.player1,
-                    player1Name: data.player1Name,
-                    player2: currentUser.uid,
-                    player2Name: currentUser.displayName,
-                    arena: arena,
-                    status: 'active',
-                    p1Card: null,
-                    p2Card: null,
-                    winner: null,
-                    createdAt: Date.now()
+                    p1: data.player1, p1Name: data.p1Name,
+                    p2: currentUser.uid, p2Name: currentUser.displayName,
+                    arena, p1Card: null, p2Card: null, winner: null, createdAt: Date.now()
                 });
-                
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'current'));
+                await deleteDoc(queueDoc);
                 joinGame(matchId);
             } else {
-                // Start Queue
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'current'), {
-                    player1: currentUser.uid,
-                    player1Name: currentUser.displayName,
-                    startedAt: Date.now()
-                });
-                
-                // Watch for match creation
-                const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'matches'), (snap) => {
-                    snap.docs.forEach(doc => {
-                        const d = doc.data();
-                        if (d.player1 === currentUser.uid || d.player2 === currentUser.uid) {
+                await setDoc(queueDoc, { player1: currentUser.uid, p1Name: currentUser.displayName, time: Date.now() });
+                const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'matches'), s => {
+                    s.docs.forEach(d => {
+                        if (d.data().p1 === currentUser.uid || d.data().p2 === currentUser.uid) {
                             unsub();
-                            joinGame(doc.id);
+                            joinGame(d.id);
                         }
                     });
                 });
@@ -414,170 +310,110 @@
         };
 
         window.cancelMatchmaking = async () => {
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'current'));
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'active'));
             document.getElementById('lobby-actions').classList.remove('hidden');
             document.getElementById('matchmaking-ui').classList.add('hidden');
         };
 
-        // GAMEPLAY ENGINE
         function joinGame(matchId) {
-            currentMatchId = matchId;
+            activeMatchId = matchId;
             navigateTo('game');
-            document.getElementById('matchmaking-ui').classList.add('hidden');
-            document.getElementById('lobby-actions').classList.remove('hidden');
-
-            matchUnsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), (snap) => {
-                if (!snap.exists()) return exitGame();
-                const match = snap.data();
-                renderGame(match);
+            matchUnsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), snap => {
+                if (snap.exists()) renderGame(snap.data());
+                else exitGame();
             });
         }
 
         function renderGame(match) {
-            const isP1 = match.player1 === currentUser.uid;
+            const isP1 = match.p1 === currentUser.uid;
             const myCard = isP1 ? match.p1Card : match.p2Card;
             const oppCard = isP1 ? match.p2Card : match.p1Card;
-            const oppName = isP1 ? match.player2Name : match.player1Name;
 
-            // Header
-            document.getElementById('game-arena-info').innerHTML = `
-                <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center font-black">
-                    ${match.arena.type[0]}
-                </div>
-                <div>
-                    <h3 class="text-xl font-black font-game uppercase text-white">${match.arena.name}</h3>
-                    <div class="flex gap-2">
-                        ${match.arena.attributes.map(a => `<span class="text-[9px] font-black bg-slate-950 px-2 py-1 rounded text-slate-400 uppercase border border-slate-800">${a}</span>`).join('')}
+            document.getElementById('game-header').innerHTML = `
+                <div class="flex items-center gap-6">
+                    <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl font-black font-game">${match.arena.type[0]}</div>
+                    <div>
+                        <h3 class="text-2xl font-black font-game uppercase text-white">${match.arena.name}</h3>
+                        <div class="flex gap-2">
+                            ${match.arena.attributes.map(a => `<span class="text-[10px] font-black bg-slate-950 px-3 py-1 rounded-lg text-slate-500 uppercase border border-slate-800">${a}</span>`).join('')}
+                        </div>
                     </div>
                 </div>
+                <div class="text-xl font-black font-game text-blue-500">ROUND 1</div>
             `;
 
-            document.getElementById('opp-name').innerText = oppName;
-            document.getElementById('opp-status').innerText = oppCard ? 'Ready' : 'Thinking...';
-            document.getElementById('player-status').innerText = myCard ? 'Waiting for opponent' : 'Select a Card';
-
-            // Slots
+            document.getElementById('opp-name').innerText = isP1 ? match.p2Name : match.p1Name;
             document.getElementById('opp-card-slot').innerHTML = oppCard 
-                ? (match.winner ? renderCardSmall(oppCard) : ` <div class="w-full h-full bg-slate-800 rounded-2xl flex items-center justify-center animate-pulse">CARD HIDDEN</div>`)
-                : 'WAITING...';
+                ? (match.winner ? renderCardDisplay(oppCard) : `<div class="animate-pulse text-slate-700">ENCRYPTED</div>`)
+                : `SCANNING...`;
             
-            document.getElementById('player-card-slot').innerHTML = myCard 
-                ? renderCardSmall(myCard)
-                : 'CHOOSE';
+            document.getElementById('player-card-slot').innerHTML = myCard ? renderCardDisplay(myCard) : `SELECT`;
 
-            // Hand
-            const handEl = document.getElementById('game-hand');
+            const hand = document.getElementById('game-hand');
             if (!myCard) {
-                handEl.innerHTML = myCollection.map((c, i) => `
-                    <div onclick="playCard(${i})" class="flex-shrink-0 w-32 h-44 bg-slate-950 rounded-xl border border-slate-800 p-3 cursor-pointer hover:border-blue-500 transition-all flex flex-col justify-between">
+                hand.innerHTML = myCollection.map((c, i) => `
+                    <div onclick="playCard(${i})" class="w-40 h-56 bg-slate-950 border border-slate-800 rounded-2xl p-4 cursor-pointer hover:border-blue-500 card-node flex flex-col justify-between">
                         <div>
-                            <p class="text-[8px] font-black text-blue-500 uppercase">${c.type}</p>
-                            <p class="text-[10px] font-black leading-tight">${c.name}</p>
+                            <p class="text-[8px] font-black text-blue-500 uppercase mb-1">${c.type}</p>
+                            <p class="text-xs font-black font-game leading-tight">${c.name}</p>
                         </div>
-                        <div class="text-[8px] text-slate-500 font-bold uppercase">Click to play</div>
+                        <div class="text-[8px] font-black text-slate-600 uppercase">Deploy Card</div>
                     </div>
                 `).join('');
             } else {
-                handEl.innerHTML = `<div class="py-10 text-slate-500 font-black uppercase italic tracking-widest">Card Locked In</div>`;
+                hand.innerHTML = `<div class="py-10 text-slate-600 font-black uppercase tracking-widest italic">Signal Locked</div>`;
             }
 
-            // Resolution
-            if (match.p1Card && match.p2Card && !match.winner) {
-                resolveBattle(match);
-            }
+            if (match.p1Card && match.p2Card && !match.winner && isP1) resolveMatch(match);
 
             if (match.winner) {
-                const isWinner = match.winner === currentUser.uid;
-                const overlay = document.getElementById('match-result-overlay');
-                overlay.classList.remove('hidden');
-                overlay.innerText = isWinner ? "VICTORY!" : "DEFEAT";
-                overlay.className = `mt-4 text-4xl font-black font-game uppercase ${isWinner ? 'text-green-500' : 'text-red-500'}`;
-                
-                setTimeout(() => {
-                    if (isWinner) handleWin(match);
-                    exitGame();
-                }, 4000);
+                const winMsg = document.getElementById('match-result-overlay');
+                winMsg.classList.remove('hidden');
+                winMsg.innerText = match.winner === currentUser.uid ? "WINNER" : "DEFEATED";
+                winMsg.className = `text-6xl font-black font-game uppercase mb-4 ${match.winner === currentUser.uid ? 'text-green-500' : 'text-red-500'}`;
+                setTimeout(exitGame, 4000);
             }
         }
 
-        function renderCardSmall(card) {
-            return `
-                <div class="w-full h-full bg-slate-900 rounded-2xl border-2 border-blue-500 p-4 flex flex-col justify-between">
-                    <div>
-                        <p class="text-[10px] font-black text-blue-500 uppercase">${card.type}</p>
-                        <h4 class="text-md font-black leading-tight">${card.name}</h4>
-                    </div>
-                    <div class="text-[10px] text-slate-400">
-                        Special: <span class="text-yellow-500 font-black">${card.special}</span>
-                    </div>
-                </div>
-            `;
+        function renderCardDisplay(c) {
+            return `<div class="w-full h-full bg-slate-900 border-2 border-blue-500 rounded-[2rem] p-6 flex flex-col justify-between text-left">
+                <div><p class="text-[10px] font-black text-blue-500 uppercase mb-1">${c.type}</p><h4 class="text-xl font-black font-game leading-tight">${c.name}</h4></div>
+                <div class="pt-4 border-t border-slate-800"><p class="text-[10px] text-yellow-500 font-black uppercase">${c.special}</p></div>
+            </div>`;
         }
 
-        window.playCard = async (index) => {
-            const card = myCollection[index];
-            const isP1 = currentMatchId.startsWith(currentUser.uid);
-            const field = isP1 ? 'p1Card' : 'p2Card';
-            
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), {
-                [field]: card
-            });
+        window.playCard = async (idx) => {
+            const field = (activeMatchId.startsWith(currentUser.uid)) ? 'p1Card' : 'p2Card';
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId), { [field]: myCollection[idx] });
         };
 
-        async function resolveBattle(match) {
-            if (match.player1 !== currentUser.uid) return; // P1 handles logic
-
-            let p1Total = 0;
-            let p2Total = 0;
-
-            const attrs = match.arena.attributes;
+        async function resolveMatch(m) {
+            const calc = (card) => {
+                let total = m.arena.attributes.reduce((sum, a) => sum + card.stats[a], 0);
+                if (card.type === m.arena.type) {
+                    if (card.special === "Battle Ready") total += 3; // Basic placeholder for special logic
+                    if (card.special === "Focused Training") total += 2;
+                }
+                return total;
+            };
+            const wId = calc(m.p1Card) >= calc(m.p2Card) ? m.p1 : m.p2;
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId), { winner: wId });
             
-            // Basic Totals
-            attrs.forEach(attr => {
-                p1Total += match.p1Card.stats[attr];
-                p2Total += match.p2Card.stats[attr];
-            });
-
-            // Specials Logic
-            if (match.p1Card.type === match.arena.type) {
-                if (match.p1Card.special === "Battle Ready") p1Total += 3;
-                if (match.p1Card.special === "Focused Training") p1Total += 2;
-            }
-            if (match.p2Card.type === match.arena.type) {
-                if (match.p2Card.special === "Battle Ready") p2Total += 3;
-                if (match.p2Card.special === "Focused Training") p2Total += 2;
-            }
-
-            const winnerId = p1Total >= p2Total ? match.player1 : match.player2;
-            
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', currentMatchId), {
-                winner: winnerId
-            });
-        }
-
-        async function handleWin(match) {
-            const loserId = match.winner === match.player1 ? match.player2 : match.player1;
-            const stolenCard = match.winner === match.player1 ? match.p2Card : match.p1Card;
-
-            // Winner gets card + win
-            await updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'), {
+            // Logic for win recording
+            await updateDoc(doc(db, 'artifacts', appId, 'users', wId, 'profile', 'data'), { 
                 wins: increment(1),
-                cards: arrayUnion(stolenCard)
+                cards: arrayUnion(wId === m.p1 ? m.p2Card : m.p1Card)
             });
-
-            // Note: In a production app, the loser needs to lose the card. 
-            // This requires a separate cloud function or triggered logic for security.
         }
 
         function exitGame() {
             if (matchUnsub) matchUnsub();
-            currentMatchId = null;
-            navigateTo('home');
+            activeMatchId = null;
             document.getElementById('match-result-overlay').classList.add('hidden');
+            document.getElementById('lobby-actions').classList.remove('hidden');
+            document.getElementById('matchmaking-ui').classList.add('hidden');
+            navigateTo('home');
         }
-
-        // INIT
-        navigateTo('auth');
 
     </script>
 </body>
