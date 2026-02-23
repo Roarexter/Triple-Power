@@ -231,7 +231,6 @@
 
         // --- GAME LOGIC ENGINE ---
         function processGameState() {
-            // NEW: Check if we are waiting for an opponent to join the created game
             if (gameData.status === 'drafting' && !gameData.players[1].uid) {
                 renderWaitingForOpponent();
                 return;
@@ -281,7 +280,6 @@
                 </div>
             `;
             document.getElementById('leave-lobby').onclick = async () => {
-                // Clear the global lobby if we were the host
                 if (playerRole === 'p0') {
                     const lobbyRef = doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game');
                     await updateDoc(lobbyRef, { status: 'cancelled' });
@@ -423,15 +421,18 @@
             if (!card0 || !card1) return;
 
             let activeBattleAttrs = [...field.attrs];
+            let activations = ["", ""]; // Track special ability text per player
+
             [card0, card1].forEach((card, i) => {
                 if (card.type === field.type && card.special === "Narrow It Down") {
                     let weakest = activeBattleAttrs[0];
                     activeBattleAttrs.forEach(a => { if (card.stats[a] < card.stats[weakest]) weakest = a; });
                     activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakest);
+                    activations[i] = "Special Activated: Removed weakest attribute from scoring.";
                 }
             });
 
-            let results = [{ score: 0, log: [] }, { score: 0, log: [] }];
+            let results = [{ score: 0 }, { score: 0 }];
             activeBattleAttrs.forEach(attr => {
                 results[0].score += card0.stats[attr];
                 results[1].score += card1.stats[attr];
@@ -441,8 +442,18 @@
                 const card = [card0, card1][i];
                 const oppCard = [card0, card1][1-i];
                 if (card.type === field.type) {
-                    if (card.special === "Underdog Mentality" && card.level < oppCard.level) { res.score += 2; }
-                    if (card.special === "Battle Ready") { res.score += activeBattleAttrs.length; }
+                    if (card.special === "Underdog Mentality" && card.level < oppCard.level) { 
+                        res.score += 2; 
+                        activations[i] = "Special Activated: +2 Underdog Bonus vs higher level!";
+                    }
+                    if (card.special === "Battle Ready") { 
+                        res.score += activeBattleAttrs.length; 
+                        activations[i] = `Special Activated: +${activeBattleAttrs.length} Battle Ready Bonus!`;
+                    }
+                    if (card.special === "Reinforcements" || card.special === "Bonus Training") {
+                        res.score += 3;
+                        activations[i] = "Special Activated: +3 training bonus applied.";
+                    }
                 }
             });
 
@@ -460,7 +471,8 @@
                 battleResults: {
                     scores: [results[0].score, results[1].score],
                     winnerIdx,
-                    attrs: activeBattleAttrs
+                    attrs: activeBattleAttrs,
+                    activations: activations
                 }
             });
         }
@@ -479,21 +491,27 @@
                     </div>
                 </div>
 
-                <div class="flex justify-between gap-6 mb-8 max-w-2xl mx-auto">
-                    <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500' : 'border-red-900/50'}">
-                        <div class="text-center font-bold mb-4">${gameData.activeCards[0].name}</div>
-                        <div class="text-6xl font-black text-center text-blue-400">${res.scores[0]}</div>
+                <div class="flex justify-between gap-6 mb-8 max-w-3xl mx-auto">
+                    <!-- Player 1 Card Result -->
+                    <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500 shadow-lg shadow-green-500/10' : 'border-red-900/50'}">
+                        <div class="text-center font-bold mb-4 opacity-80 text-sm uppercase tracking-wide">${gameData.activeCards[0].name}</div>
+                        <div class="text-6xl font-black text-center text-blue-400 mb-2">${res.scores[0]}</div>
+                        ${res.activations[0] ? `<div class="text-[10px] text-center text-blue-300/80 italic animate-pulse font-medium bg-blue-500/5 py-2 rounded border border-blue-500/10">${res.activations[0]}</div>` : ''}
                     </div>
+
                     <div class="flex items-center text-3xl font-black italic text-slate-600">VS</div>
-                    <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500' : 'border-red-900/50'}">
-                        <div class="text-center font-bold mb-4">${gameData.activeCards[1].name}</div>
-                        <div class="text-6xl font-black text-center text-purple-400">${res.scores[1]}</div>
+
+                    <!-- Player 2 Card Result -->
+                    <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500 shadow-lg shadow-green-500/10' : 'border-red-900/50'}">
+                        <div class="text-center font-bold mb-4 opacity-80 text-sm uppercase tracking-wide">${gameData.activeCards[1].name}</div>
+                        <div class="text-6xl font-black text-center text-purple-400 mb-2">${res.scores[1]}</div>
+                        ${res.activations[1] ? `<div class="text-[10px] text-center text-purple-300/80 italic animate-pulse font-medium bg-purple-500/5 py-2 rounded border border-purple-500/10">${res.activations[1]}</div>` : ''}
                     </div>
                 </div>
                 
                 <div class="text-center">
                     <div class="text-3xl font-black mb-4">Player ${res.winnerIdx + 1} Wins!</div>
-                    ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold">Next Battlefield</button>` : `<p class="animate-pulse">Awaiting host...</p>`}
+                    ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold shadow-lg hover:bg-blue-500 transition-all active:scale-95">Next Battlefield</button>` : `<p class="animate-pulse text-slate-500">Awaiting host to choose next battlefield...</p>`}
                 </div>
             `;
         }
