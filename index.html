@@ -62,17 +62,11 @@
         </header>
 
         <div id="game-screen">
-            <!-- Dynamic Content -->
             <div class="flex flex-col items-center justify-center py-20">
                 <div class="spinner mb-4"></div>
                 <p>Establishing secure connection...</p>
             </div>
         </div>
-    </div>
-
-    <div id="log-container" class="fixed bottom-4 right-4 w-64 max-h-48 overflow-y-auto bg-black/50 p-3 rounded-lg text-xs text-slate-300 border border-white/10 hidden">
-        <div class="font-bold mb-1 border-b border-white/10 pb-1">Battle Log</div>
-        <div id="game-log"></div>
     </div>
 
     <!-- Firebase SDKs -->
@@ -81,7 +75,6 @@
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, query, where, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global Game Configuration
         const CARDS_DATA = [
             { id: 'c1', name: "Ground Graveler", type: "Nature", level: 1, special: "Focused Training", stats: { strength: 5, speed: 15, agility: 14, health: 7, intelligence: 6, creativity: 13, accuracy: 10, stamina: 12, skill: 8, strategy: 10 } },
             { id: 'c2', name: "Tiny", type: "Nature", level: 1, special: "Underdog Mentality", stats: { strength: 6, speed: 16, agility: 19, health: 7, intelligence: 9, creativity: 12, accuracy: 8, stamina: 10, skill: 8, strategy: 5 } },
@@ -100,44 +93,26 @@
             { name: "Town Center", type: "Village", attrs: ["strength", "health", "speed"] }
         ];
 
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI",
-            authDomain: "triplepower-8dca6.firebaseapp.com",
-            projectId: "triplepower-8dca6",
-            storageBucket: "triplepower-8dca6.firebasestorage.app",
-            messagingSenderId: "73414403539",
-            appId: "1:73414403539:web:d54faef95d2709a78e3b26"
-        };
-
+        const firebaseConfig = JSON.parse(__firebase_config);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'triplepower-default';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'battle-clash-v1';
 
-        // Local State
         let currentUser = null;
         let gameId = null;
         let gameData = null;
-        let playerRole = null; // 'p0' or 'p1'
+        let playerRole = null; 
 
         const screen = document.getElementById('game-screen');
         const statusText = document.getElementById('game-status');
         const userInfo = document.getElementById('user-info');
-        const gameLog = document.getElementById('game-log');
-        const logContainer = document.getElementById('log-container');
 
-        // --- AUTHENTICATION ---
         const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (err) {
-                console.error("Auth error", err);
-                statusText.innerText = "Connection failed. Please refresh.";
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
             }
         };
 
@@ -145,11 +120,10 @@
             if (user) {
                 currentUser = user;
                 userInfo.innerText = `Logged in as: ${user.uid}`;
-                renderMainMenu();
+                if (!gameId) renderMainMenu();
             }
         });
 
-        // --- UI UTILS ---
         function createStatsHTML(stats) {
             return `
                 <div class="stats-tooltip">
@@ -164,13 +138,12 @@
             `;
         }
 
-        // --- MATCHMAKING ---
         async function startMatchmaking() {
             statusText.innerText = "Searching for an opponent...";
             screen.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-20">
+                <div class="flex flex-col items-center justify-center py-20 text-center">
                     <div class="spinner mb-6"></div>
-                    <p class="text-xl font-bold animate-pulse">Searching for match...</p>
+                    <p class="text-xl font-bold animate-pulse">Contacting Lobby Server...</p>
                     <button id="cancel-match" class="mt-8 text-slate-500 hover:text-white underline text-sm">Cancel</button>
                 </div>
             `;
@@ -226,10 +199,9 @@
                 if (!snapshot.exists()) return;
                 gameData = snapshot.data();
                 processGameState();
-            });
+            }, (err) => console.error("Firestore error:", err));
         }
 
-        // --- GAME LOGIC ENGINE ---
         function processGameState() {
             if (gameData.status === 'drafting' && !gameData.players[1].uid) {
                 renderWaitingForOpponent();
@@ -263,17 +235,17 @@
         }
 
         function renderWaitingForOpponent() {
-            statusText.innerText = "WAITING FOR OPPONENT";
+            statusText.innerText = "LOBBY CREATED";
             screen.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 text-center">
                     <div class="relative mb-8">
                         <div class="spinner w-16 h-16 border-4"></div>
                         <div class="absolute inset-0 flex items-center justify-center">
-                            <span class="text-xs font-bold animate-pulse text-blue-400">P2?</span>
+                            <span class="text-xs font-bold animate-pulse text-blue-400">HOST</span>
                         </div>
                     </div>
                     <h2 class="text-3xl font-black mb-2 text-white">Waiting for an opponent...</h2>
-                    <p class="text-slate-400 mb-8 max-w-xs">Match created! The game will start automatically when someone joins.</p>
+                    <p class="text-slate-400 mb-8 max-w-xs">Your lobby is open. The draft will begin as soon as a challenger joins.</p>
                     <button id="leave-lobby" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition-all">
                         LEAVE LOBBY
                     </button>
@@ -292,13 +264,13 @@
             const pIndex = gameData.draftOrder[gameData.draftStep];
             const isMyTurn = (pIndex === 0 && playerRole === 'p0') || (pIndex === 1 && playerRole === 'p1');
             
-            statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT TO PICK";
+            statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "OPPONENT'S TURN";
 
             screen.innerHTML = `
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     ${gameData.pool.map((card, idx) => `
                         <div class="card-container">
-                            <div onclick="${isMyTurn ? `pickCard(${idx})` : ''}" class="gradient-border ${isMyTurn ? 'cursor-pointer hover:-translate-y-1' : 'opacity-50 grayscale cursor-not-allowed'} transition-all">
+                            <div onclick="${isMyTurn ? `pickCard(${idx})` : ''}" class="gradient-border ${isMyTurn ? 'cursor-pointer hover:-translate-y-1' : 'opacity-40 grayscale cursor-not-allowed'} transition-all">
                                 <div class="bg-slate-800 p-3 rounded-lg h-full">
                                     <div class="flex justify-between items-start mb-2">
                                         <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10">${card.type}</span>
@@ -318,7 +290,6 @@
         window.pickCard = async (idx) => {
             const pIdx = gameData.draftOrder[gameData.draftStep];
             const card = gameData.pool[idx];
-            
             const newPool = [...gameData.pool];
             newPool.splice(idx, 1);
             
@@ -346,23 +317,22 @@
         function renderBattleSelection() {
             const myIdx = playerRole === 'p0' ? 0 : 1;
             const myCardSelected = gameData.activeCards[myIdx] !== null;
-            const oppCardSelected = gameData.activeCards[1 - myIdx] !== null;
 
             if (gameData.activeCards[0] && gameData.activeCards[1]) {
                 if (playerRole === 'p0') resolveBattle();
-                statusText.innerText = "RESOLVING CLASH...";
-                screen.innerHTML = `<div class="flex justify-center py-20"><div class="spinner"></div></div>`;
+                statusText.innerText = "CALCULATING CLASH...";
+                screen.innerHTML = `<div class="flex flex-col items-center justify-center py-20"><div class="spinner mb-4"></div><p>Syncing calculations...</p></div>`;
                 return;
             }
 
-            statusText.innerText = myCardSelected ? "Waiting for opponent's selection..." : "SELECT YOUR CHAMPION";
+            statusText.innerText = myCardSelected ? "Waiting for opponent..." : "CHOOSE YOUR CHAMPION";
             const field = gameData.battlefield;
             const myPlayer = gameData.players[myIdx];
 
             screen.innerHTML = `
                 <div class="mb-6 p-6 bg-slate-800/80 rounded-xl border border-white/10 text-center shadow-2xl">
                     <div class="inline-block px-3 py-1 mb-2 rounded-full text-[10px] font-bold tracking-widest uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                        ${field.type} Battlefield
+                        ${field.type} Field
                     </div>
                     <h2 class="text-3xl font-black text-white mb-2">${field.name}</h2>
                     <div class="flex justify-center gap-2">
@@ -372,9 +342,9 @@
 
                 <div class="flex flex-col items-center">
                     ${myCardSelected ? `
-                        <div class="p-8 text-center bg-blue-500/10 rounded-xl border border-blue-500/20 animate-pulse">
-                            <p class="font-bold text-blue-400">UNIT DEPLOYED: ${gameData.activeCards[myIdx].name}</p>
-                            <p class="text-xs text-slate-500 mt-2">Awaiting your opponent's move...</p>
+                        <div class="p-8 text-center bg-blue-500/10 rounded-xl border border-blue-500/20">
+                            <p class="font-bold text-blue-400">DEPLOYED: ${gameData.activeCards[myIdx].name}</p>
+                            <p class="text-xs text-slate-500 mt-2">Standing by for opponent's deployment...</p>
                         </div>
                     ` : `
                         <div class="flex flex-wrap justify-center gap-4">
@@ -401,10 +371,8 @@
             const myIdx = playerRole === 'p0' ? 0 : 1;
             const myHand = [...gameData.players[myIdx].hand];
             const selected = myHand.splice(cardIdx, 1)[0];
-            
             const playersUpdate = [...gameData.players];
             playersUpdate[myIdx].hand = myHand;
-            
             const activeUpdate = [...gameData.activeCards];
             activeUpdate[myIdx] = selected;
 
@@ -421,7 +389,7 @@
             if (!card0 || !card1) return;
 
             let activeBattleAttrs = [...field.attrs];
-            let activations = ["", ""]; // Track special ability text per player
+            let activations = ["", ""];
 
             [card0, card1].forEach((card, i) => {
                 if (card.type === field.type && card.special === "Narrow It Down") {
@@ -460,11 +428,11 @@
             const winnerIdx = results[0].score >= results[1].score ? 0 : 1;
             const loserIdx = 1 - winnerIdx;
             const newPlayers = JSON.parse(JSON.stringify(gameData.players));
-            
             newPlayers[winnerIdx].hand.push(gameData.activeCards[loserIdx]);
             
             let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
 
+            // Crucial: Send entire activations array to Firestore so BOTH players get it
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
                 status: nextStatus,
                 players: newPlayers,
@@ -479,12 +447,13 @@
 
         function renderResultUI() {
             const res = gameData.battleResults;
-            statusText.innerText = "CLASH COMPLETE";
+            if (!res) return;
+            statusText.innerText = "ROUND OVER";
 
             screen.innerHTML = `
                 <div class="mb-6 text-center">
                     <div class="inline-block px-4 py-2 bg-slate-800 rounded-lg border border-white/10">
-                        <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest mb-1">Final Attributes Used</span>
+                        <span class="text-[10px] text-slate-400 block uppercase font-bold mb-1">Scoring Attributes</span>
                         <div class="flex justify-center gap-2">
                             ${res.attrs.map(a => `<span class="text-xs font-mono text-blue-300 capitalize">${a}</span>`).join(' • ')}
                         </div>
@@ -492,26 +461,26 @@
                 </div>
 
                 <div class="flex justify-between gap-6 mb-8 max-w-3xl mx-auto">
-                    <!-- Player 1 Card Result -->
+                    <!-- Player 1 -->
                     <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500 shadow-lg shadow-green-500/10' : 'border-red-900/50'}">
-                        <div class="text-center font-bold mb-4 opacity-80 text-sm uppercase tracking-wide">${gameData.activeCards[0].name}</div>
+                        <div class="text-center font-bold mb-4 opacity-80 text-sm uppercase">${gameData.activeCards[0].name}</div>
                         <div class="text-6xl font-black text-center text-blue-400 mb-2">${res.scores[0]}</div>
-                        ${res.activations[0] ? `<div class="text-[10px] text-center text-blue-300/80 italic animate-pulse font-medium bg-blue-500/5 py-2 rounded border border-blue-500/10">${res.activations[0]}</div>` : ''}
+                        ${res.activations && res.activations[0] ? `<div class="text-[10px] text-center text-blue-300/80 italic animate-pulse font-medium bg-blue-500/10 p-2 rounded border border-blue-500/20">${res.activations[0]}</div>` : ''}
                     </div>
 
-                    <div class="flex items-center text-3xl font-black italic text-slate-600">VS</div>
+                    <div class="flex items-center text-3xl font-black italic text-slate-700">VS</div>
 
-                    <!-- Player 2 Card Result -->
+                    <!-- Player 2 -->
                     <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500 shadow-lg shadow-green-500/10' : 'border-red-900/50'}">
-                        <div class="text-center font-bold mb-4 opacity-80 text-sm uppercase tracking-wide">${gameData.activeCards[1].name}</div>
+                        <div class="text-center font-bold mb-4 opacity-80 text-sm uppercase">${gameData.activeCards[1].name}</div>
                         <div class="text-6xl font-black text-center text-purple-400 mb-2">${res.scores[1]}</div>
-                        ${res.activations[1] ? `<div class="text-[10px] text-center text-purple-300/80 italic animate-pulse font-medium bg-purple-500/5 py-2 rounded border border-purple-500/10">${res.activations[1]}</div>` : ''}
+                        ${res.activations && res.activations[1] ? `<div class="text-[10px] text-center text-purple-300/80 italic animate-pulse font-medium bg-purple-500/10 p-2 rounded border border-purple-500/20">${res.activations[1]}</div>` : ''}
                     </div>
                 </div>
                 
                 <div class="text-center">
                     <div class="text-3xl font-black mb-4">Player ${res.winnerIdx + 1} Wins!</div>
-                    ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold shadow-lg hover:bg-blue-500 transition-all active:scale-95">Next Battlefield</button>` : `<p class="animate-pulse text-slate-500">Awaiting host to choose next battlefield...</p>`}
+                    ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold shadow-lg hover:bg-blue-500 transition-all active:scale-95">Next Battlefield</button>` : `<p class="animate-pulse text-slate-500">Host is selecting next battlefield...</p>`}
                 </div>
             `;
         }
@@ -534,8 +503,8 @@
             screen.innerHTML = `
                 <div class="text-center py-12">
                     <h2 class="text-6xl font-black text-yellow-500 mb-6">VICTORY</h2>
-                    <p class="text-2xl mb-12">Player ${winnerIdx + 1} Wins!</p>
-                    <button onclick="location.reload()" class="bg-white text-black px-12 py-4 rounded-full font-bold">Return to Menu</button>
+                    <p class="text-2xl mb-12">Player ${winnerIdx + 1} Captured All Cards!</p>
+                    <button onclick="location.reload()" class="bg-white text-black px-12 py-4 rounded-full font-bold">Main Menu</button>
                 </div>
             `;
         }
