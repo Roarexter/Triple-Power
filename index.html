@@ -83,14 +83,14 @@
 
         // Global Game Configuration
         const CARDS_DATA = [
-            { name: "Ground Graveler", type: "Nature", level: 1, special: "Focused Training", stats: { strength: 5, speed: 15, agility: 14, health: 7, intelligence: 6, creativity: 13, accuracy: 10, stamina: 12, skill: 8, strategy: 10 } },
-            { name: "Tiny", type: "Nature", level: 1, special: "Underdog Mentality", stats: { strength: 6, speed: 16, agility: 19, health: 7, intelligence: 9, creativity: 12, accuracy: 8, stamina: 10, skill: 8, strategy: 5 } },
-            { name: "Vine Thrasher", type: "Nature", level: 2, special: "Set My Own Rules", stats: { strength: 16, speed: 7, agility: 11, health: 8, intelligence: 12, creativity: 11, accuracy: 4, stamina: 9, skill: 14, strategy: 13 } },
-            { name: "Bush Beast", type: "Nature", level: 2, special: "Reinforcements", stats: { strength: 7, speed: 16, agility: 13, health: 4, intelligence: 6, creativity: 14, accuracy: 12, stamina: 8, skill: 7, strategy: 18 } },
-            { name: "Villager", type: "Village", level: 1, special: "Battle Ready", stats: { strength: 7, speed: 12, agility: 11, health: 15, intelligence: 11, creativity: 9, accuracy: 10, stamina: 13, skill: 7, strategy: 5 } },
-            { name: "Realo", type: "Village", level: 1, special: "Rescue Mission", stats: { strength: 10, speed: 9, agility: 9, health: 8, intelligence: 13, creativity: 13, accuracy: 8, stamina: 11, skill: 8, strategy: 11 } },
-            { name: "Warrior", type: "Village", level: 2, special: "Bonus Training", stats: { strength: 18, speed: 13, agility: 8, health: 8, intelligence: 5, creativity: 7, accuracy: 12, stamina: 13, skill: 12, strategy: 9 } },
-            { name: "Target Shielder", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } }
+            { id: 'c1', name: "Ground Graveler", type: "Nature", level: 1, special: "Focused Training", stats: { strength: 5, speed: 15, agility: 14, health: 7, intelligence: 6, creativity: 13, accuracy: 10, stamina: 12, skill: 8, strategy: 10 } },
+            { id: 'c2', name: "Tiny", type: "Nature", level: 1, special: "Underdog Mentality", stats: { strength: 6, speed: 16, agility: 19, health: 7, intelligence: 9, creativity: 12, accuracy: 8, stamina: 10, skill: 8, strategy: 5 } },
+            { id: 'c3', name: "Vine Thrasher", type: "Nature", level: 2, special: "Set My Own Rules", stats: { strength: 16, speed: 7, agility: 11, health: 8, intelligence: 12, creativity: 11, accuracy: 4, stamina: 9, skill: 14, strategy: 13 } },
+            { id: 'c4', name: "Bush Beast", type: "Nature", level: 2, special: "Reinforcements", stats: { strength: 7, speed: 16, agility: 13, health: 4, intelligence: 6, creativity: 14, accuracy: 12, stamina: 8, skill: 7, strategy: 18 } },
+            { id: 'c5', name: "Villager", type: "Village", level: 1, special: "Battle Ready", stats: { strength: 7, speed: 12, agility: 11, health: 15, intelligence: 11, creativity: 9, accuracy: 10, stamina: 13, skill: 7, strategy: 5 } },
+            { id: 'c6', name: "Realo", type: "Village", level: 1, special: "Rescue Mission", stats: { strength: 10, speed: 9, agility: 9, health: 8, intelligence: 13, creativity: 13, accuracy: 8, stamina: 11, skill: 8, strategy: 11 } },
+            { id: 'c7', name: "Warrior", type: "Village", level: 2, special: "Bonus Training", stats: { strength: 18, speed: 13, agility: 8, health: 8, intelligence: 5, creativity: 7, accuracy: 12, stamina: 13, skill: 12, strategy: 9 } },
+            { id: 'c8', name: "Target Shielder", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } }
         ];
 
         const BATTLEFIELDS = [
@@ -120,7 +120,6 @@
         let gameId = null;
         let gameData = null;
         let playerRole = null; // 'p0' or 'p1'
-        let matchmakingListener = null;
 
         const screen = document.getElementById('game-screen');
         const statusText = document.getElementById('game-status');
@@ -151,14 +150,6 @@
         });
 
         // --- UI UTILS ---
-        function addLog(msg) {
-            const div = document.createElement('div');
-            div.className = "mb-1 border-l-2 border-blue-500 pl-2";
-            div.innerText = msg;
-            gameLog.prepend(div);
-            logContainer.classList.remove('hidden');
-        }
-
         function createStatsHTML(stats) {
             return `
                 <div class="stats-tooltip">
@@ -186,25 +177,16 @@
 
             document.getElementById('cancel-match').onclick = () => renderMainMenu();
 
-            const lobbyRef = collection(db, 'artifacts', appId, 'public', 'data', 'lobby');
-            
-            // Look for existing lobby
-            // RULE 2: No complex queries, just get open lobbies
-            const lobbiesSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game'));
+            const lobbyRef = doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game');
+            const lobbiesSnap = await getDoc(lobbyRef);
             const lobbyData = lobbiesSnap.data();
 
             if (lobbyData && lobbyData.hostId !== currentUser.uid && lobbyData.status === 'waiting') {
-                // Join existing game
                 gameId = lobbyData.gameId;
                 playerRole = 'p1';
-                
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game'), {
-                    status: 'filled'
-                });
-                
+                await updateDoc(lobbyRef, { status: 'filled' });
                 await joinGame(gameId);
             } else {
-                // Host new game
                 gameId = `game_${Date.now()}_${currentUser.uid}`;
                 playerRole = 'p0';
 
@@ -213,27 +195,19 @@
                     status: 'drafting',
                     createdAt: Date.now(),
                     players: [
-                        { uid: currentUser.uid, name: "Player 1", hand: [], lastLostCard: null },
-                        { uid: null, name: "Player 2", hand: [], lastLostCard: null }
+                        { uid: currentUser.uid, name: "Player 1", hand: [] },
+                        { uid: null, name: "Player 2", hand: [] }
                     ],
                     pool: [...CARDS_DATA].sort(() => Math.random() - 0.5),
-                    draftOrder: [0, 1, 1, 0, 0, 1, 1, 0].map(i => i), // Simplified draft
+                    draftOrder: [0, 1, 1, 0, 0, 1, 1, 0],
                     draftStep: 0,
                     activeCards: [null, null],
-                    winnerInPlayIdx: null,
                     battlefield: null,
-                    battleResults: null,
-                    turn: 0,
-                    logs: []
+                    battleResults: null
                 };
 
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), newGame);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game'), {
-                    gameId: gameId,
-                    hostId: currentUser.uid,
-                    status: 'waiting'
-                });
-
+                await setDoc(lobbyRef, { gameId, hostId: currentUser.uid, status: 'waiting' });
                 watchGame(gameId);
             }
         }
@@ -252,7 +226,7 @@
                 if (!snapshot.exists()) return;
                 gameData = snapshot.data();
                 processGameState();
-            }, (err) => console.error("Game listener error", err));
+            });
         }
 
         // --- GAME LOGIC ENGINE ---
@@ -340,19 +314,18 @@
 
         function renderBattleSelection() {
             const myIdx = playerRole === 'p0' ? 0 : 1;
-            const oppIdx = 1 - myIdx;
-
             const myCardSelected = gameData.activeCards[myIdx] !== null;
-            const oppCardSelected = gameData.activeCards[oppIdx] !== null;
+            const oppCardSelected = gameData.activeCards[1 - myIdx] !== null;
 
-            if (myCardSelected && oppCardSelected) {
-                // Host resolves the battle logic to ensure single source of truth
+            // FIX: Ensure BOTH players have selected before Host resolves
+            if (gameData.activeCards[0] && gameData.activeCards[1]) {
                 if (playerRole === 'p0') resolveBattle();
+                statusText.innerText = "RESOLVING CLASH...";
+                screen.innerHTML = `<div class="flex justify-center py-20"><div class="spinner"></div></div>`;
                 return;
             }
 
             statusText.innerText = myCardSelected ? "Waiting for opponent's selection..." : "SELECT YOUR CHAMPION";
-
             const field = gameData.battlefield;
             const myPlayer = gameData.players[myIdx];
 
@@ -370,8 +343,8 @@
                 <div class="flex flex-col items-center">
                     ${myCardSelected ? `
                         <div class="p-8 text-center bg-blue-500/10 rounded-xl border border-blue-500/20 animate-pulse">
-                            <p class="font-bold text-blue-400">YOU HAVE DEPLOYED YOUR UNIT</p>
-                            <p class="text-xs text-slate-500">Awaiting your opponent's move...</p>
+                            <p class="font-bold text-blue-400">UNIT DEPLOYED: ${gameData.activeCards[myIdx].name}</p>
+                            <p class="text-xs text-slate-500 mt-2">Awaiting your opponent's move...</p>
                         </div>
                     ` : `
                         <div class="flex flex-wrap justify-center gap-4">
@@ -396,104 +369,67 @@
 
         window.selectCardForBattle = async (cardIdx) => {
             const myIdx = playerRole === 'p0' ? 0 : 1;
-            const newPlayers = [...gameData.players];
-            const activeCards = [...gameData.activeCards];
+            const myHand = [...gameData.players[myIdx].hand];
+            const selected = myHand.splice(cardIdx, 1)[0];
             
-            const card = newPlayers[myIdx].hand.splice(cardIdx, 1)[0];
-            activeCards[myIdx] = card;
+            const playersUpdate = [...gameData.players];
+            playersUpdate[myIdx].hand = myHand;
+            
+            const activeUpdate = [...gameData.activeCards];
+            activeUpdate[myIdx] = selected;
 
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                players: newPlayers,
-                activeCards: activeCards
+                players: playersUpdate,
+                activeCards: activeUpdate
             });
         };
 
-        // Battle Resolution Logic (Server-side simulation on host client)
         async function resolveBattle() {
             const field = gameData.battlefield;
             const card0 = gameData.activeCards[0];
             const card1 = gameData.activeCards[1];
-            
-            let activeBattleAttrs = [...field.attrs];
-            let globalLogs = [];
+            if (!card0 || !card1) return;
 
+            let activeBattleAttrs = [...field.attrs];
             [card0, card1].forEach((card, i) => {
-                if (card.type === field.type) {
-                    if (card.special === "Narrow It Down") {
-                        let weakestBattleAttr = activeBattleAttrs[0];
-                        activeBattleAttrs.forEach(a => {
-                            if (card.stats[a] < card.stats[weakestBattleAttr]) weakestBattleAttr = a;
-                        });
-                        activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakestBattleAttr);
-                        globalLogs.push(`${card.name} used Narrow It Down!`);
-                    }
-                    if (card.special === "Set My Own Rules") {
-                        const nonBattleAttrs = Object.keys(card.stats).filter(a => !activeBattleAttrs.includes(a));
-                        let bestOutsideAttr = nonBattleAttrs[0];
-                        nonBattleAttrs.forEach(a => {
-                            if (card.stats[a] > card.stats[bestOutsideAttr]) bestOutsideAttr = a;
-                        });
-                        activeBattleAttrs.push(bestOutsideAttr);
-                        globalLogs.push(`${card.name} used Set My Own Rules!`);
-                    }
+                if (card.type === field.type && card.special === "Narrow It Down") {
+                    let weakest = activeBattleAttrs[0];
+                    activeBattleAttrs.forEach(a => { if (card.stats[a] < card.stats[weakest]) weakest = a; });
+                    activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakest);
                 }
             });
 
-            let results = [{ card: card0, score: 0, log: [] }, { card: card1, score: 0, log: [] }];
+            let results = [{ score: 0, log: [] }, { score: 0, log: [] }];
             activeBattleAttrs.forEach(attr => {
                 results[0].score += card0.stats[attr];
                 results[1].score += card1.stats[attr];
             });
 
+            // Process modifiers
             results.forEach((res, i) => {
-                const card = res.card;
+                const card = [card0, card1][i];
+                const oppCard = [card0, card1][1-i];
                 if (card.type === field.type) {
-                    switch(card.special) {
-                        case "Focused Training":
-                            const weakest = Object.keys(card.stats).reduce((a, b) => card.stats[a] < card.stats[b] ? a : b);
-                            if (activeBattleAttrs.includes(weakest)) { res.score += 5; res.log.push(`Focused (+5)`); }
-                            break;
-                        case "Underdog Mentality":
-                            if (card.level < gameData.activeCards[1-i].level) { res.score += 2; res.log.push(`Underdog (+2)`); }
-                            break;
-                        case "Battle Ready":
-                            res.score += activeBattleAttrs.length; res.log.push(`Ready (+${activeBattleAttrs.length})`);
-                            break;
-                        case "Reinforcements":
-                            const teamCount = gameData.players[i].hand.filter(c => c.type === card.type).length;
-                            res.score += teamCount; res.log.push(`Reinforced (+${teamCount})`);
-                            break;
-                        case "Bonus Training":
-                            const strongest = Object.keys(card.stats).reduce((a, b) => card.stats[a] > card.stats[b] ? a : b);
-                            if (activeBattleAttrs.includes(strongest)) { res.score += 5; res.log.push(`Bonus (+5)`); }
-                            break;
-                    }
+                    if (card.special === "Underdog Mentality" && card.level < oppCard.level) { res.score += 2; }
+                    if (card.special === "Battle Ready") { res.score += activeBattleAttrs.length; }
                 }
             });
 
             const winnerIdx = results[0].score >= results[1].score ? 0 : 1;
             const loserIdx = 1 - winnerIdx;
-
-            const loserCard = gameData.activeCards[loserIdx];
-            const newPlayers = [...gameData.players];
-            newPlayers[winnerIdx].hand.push(loserCard);
-            newPlayers[loserIdx].lastLostCard = loserCard;
-
-            // Final state check: Game Over?
-            let gameStatus = 'battle_result';
-            if (newPlayers[loserIdx].hand.length === 0) {
-                gameStatus = 'finished';
-            }
+            const newPlayers = JSON.parse(JSON.stringify(gameData.players));
+            
+            newPlayers[winnerIdx].hand.push(gameData.activeCards[loserIdx]);
+            
+            let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
 
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                status: gameStatus,
+                status: nextStatus,
                 players: newPlayers,
                 battleResults: {
                     scores: [results[0].score, results[1].score],
                     winnerIdx,
-                    attrs: activeBattleAttrs,
-                    globalLogs,
-                    logs: [results[0].log, results[1].log]
+                    attrs: activeBattleAttrs
                 }
             });
         }
@@ -513,24 +449,20 @@
                 </div>
 
                 <div class="flex justify-between gap-6 mb-8 max-w-2xl mx-auto">
-                    <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500 shadow-green-500/20' : 'border-red-900/50'}">
-                        <div class="text-center font-bold text-xl mb-4">${gameData.activeCards[0].name}</div>
+                    <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500' : 'border-red-900/50'}">
+                        <div class="text-center font-bold mb-4">${gameData.activeCards[0].name}</div>
                         <div class="text-6xl font-black text-center text-blue-400">${res.scores[0]}</div>
                     </div>
                     <div class="flex items-center text-3xl font-black italic text-slate-600">VS</div>
-                    <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500 shadow-green-500/20' : 'border-red-900/50'}">
-                        <div class="text-center font-bold text-xl mb-4">${gameData.activeCards[1].name}</div>
+                    <div class="flex-1 bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500' : 'border-red-900/50'}">
+                        <div class="text-center font-bold mb-4">${gameData.activeCards[1].name}</div>
                         <div class="text-6xl font-black text-center text-purple-400">${res.scores[1]}</div>
                     </div>
                 </div>
                 
                 <div class="text-center">
-                    <div class="text-3xl font-black mb-4">Player ${res.winnerIdx + 1} Wins Round!</div>
-                    ${playerRole === 'p0' ? `
-                        <button onclick="nextRound()" class="bg-blue-600 hover:bg-blue-700 px-12 py-4 rounded-full font-bold text-lg shadow-lg">Next Battlefield</button>
-                    ` : `
-                        <p class="text-slate-400 animate-pulse">Host is picking next battlefield...</p>
-                    `}
+                    <div class="text-3xl font-black mb-4">Player ${res.winnerIdx + 1} Wins!</div>
+                    ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold">Next Battlefield</button>` : `<p class="animate-pulse">Awaiting host...</p>`}
                 </div>
             `;
         }
@@ -552,16 +484,14 @@
             const winnerIdx = gameData.battleResults.winnerIdx;
             screen.innerHTML = `
                 <div class="text-center py-12">
-                    <h2 class="text-6xl font-black text-yellow-500 mb-6 tracking-tighter">VICTORY</h2>
-                    <p class="text-2xl text-slate-300 mb-12">Player ${winnerIdx + 1} has captured the world!</p>
-                    <button onclick="location.reload()" class="bg-white text-black px-12 py-4 rounded-full font-bold text-lg hover:bg-slate-200">Return to Menu</button>
+                    <h2 class="text-6xl font-black text-yellow-500 mb-6">VICTORY</h2>
+                    <p class="text-2xl mb-12">Player ${winnerIdx + 1} Wins!</p>
+                    <button onclick="location.reload()" class="bg-white text-black px-12 py-4 rounded-full font-bold">Return to Menu</button>
                 </div>
             `;
         }
 
-        // Initialize App
         initAuth();
-
     </script>
 </body>
 </html>
