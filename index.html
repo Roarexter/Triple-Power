@@ -164,6 +164,28 @@ const CARDS_DATA = [
             `;
         }
 
+function updateBackgroundTheme() {
+    if (!gameData || !gameData.battlefield) {
+        document.body.style.background = "#0f172a"; // Default dark blue
+        return;
+    }
+
+    const type = gameData.battlefield.type;
+    
+    if (type === "Nature") {
+        // A deep forest green gradient
+        document.body.style.background = "linear-gradient(to bottom, #064e3b, #0f172a)";
+    } else if (type === "Village") {
+        // A warm sunset/terracotta gradient
+        document.body.style.background = "linear-gradient(to bottom, #451a03, #0f172a)";
+    } else {
+        document.body.style.background = "#0f172a";
+    }
+    
+    // Smooth transition effect
+    document.body.style.transition = "background 1s ease";
+}
+        
         // --- MATCHMAKING ---
         async function startMatchmaking() {
             statusText.innerText = "Searching for an opponent...";
@@ -231,10 +253,13 @@ const CARDS_DATA = [
 
         // --- GAME LOGIC ENGINE ---
         function processGameState() {
-            if (gameData.status === 'drafting' && !gameData.players[1].uid) {
-                renderWaitingForOpponent();
-                return;
-            }
+    // Add this line here
+    updateBackgroundTheme(); 
+
+    if (gameData.status === 'drafting' && !gameData.players[1].uid) {
+        renderWaitingForOpponent();
+        return;
+    }
 
             if (gameData.status === 'drafting') {
                 renderDraft();
