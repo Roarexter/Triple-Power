@@ -231,6 +231,12 @@
 
         // --- GAME LOGIC ENGINE ---
         function processGameState() {
+            // NEW: Check if we are waiting for an opponent to join the created game
+            if (gameData.status === 'drafting' && !gameData.players[1].uid) {
+                renderWaitingForOpponent();
+                return;
+            }
+
             if (gameData.status === 'drafting') {
                 renderDraft();
             } else if (gameData.status === 'battle_selection') {
@@ -255,6 +261,33 @@
             `;
             document.getElementById('find-match-btn').onclick = startMatchmaking;
             statusText.innerText = "Connect with a player to begin.";
+        }
+
+        function renderWaitingForOpponent() {
+            statusText.innerText = "WAITING FOR OPPONENT";
+            screen.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-center">
+                    <div class="relative mb-8">
+                        <div class="spinner w-16 h-16 border-4"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-xs font-bold animate-pulse text-blue-400">P2?</span>
+                        </div>
+                    </div>
+                    <h2 class="text-3xl font-black mb-2 text-white">Waiting for an opponent...</h2>
+                    <p class="text-slate-400 mb-8 max-w-xs">Match created! The game will start automatically when someone joins.</p>
+                    <button id="leave-lobby" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition-all">
+                        LEAVE LOBBY
+                    </button>
+                </div>
+            `;
+            document.getElementById('leave-lobby').onclick = async () => {
+                // Clear the global lobby if we were the host
+                if (playerRole === 'p0') {
+                    const lobbyRef = doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game');
+                    await updateDoc(lobbyRef, { status: 'cancelled' });
+                }
+                location.reload();
+            };
         }
 
         function renderDraft() {
@@ -317,7 +350,6 @@
             const myCardSelected = gameData.activeCards[myIdx] !== null;
             const oppCardSelected = gameData.activeCards[1 - myIdx] !== null;
 
-            // FIX: Ensure BOTH players have selected before Host resolves
             if (gameData.activeCards[0] && gameData.activeCards[1]) {
                 if (playerRole === 'p0') resolveBattle();
                 statusText.innerText = "RESOLVING CLASH...";
@@ -405,7 +437,6 @@
                 results[1].score += card1.stats[attr];
             });
 
-            // Process modifiers
             results.forEach((res, i) => {
                 const card = [card0, card1][i];
                 const oppCard = [card0, card1][1-i];
