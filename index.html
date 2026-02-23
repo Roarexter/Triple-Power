@@ -16,6 +16,9 @@
         .card-node:hover { transform: translateY(-5px) scale(1.02); }
         .loading-ring { border: 4px solid rgba(59, 130, 246, 0.1); border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Custom scrollbar for game hand */
+        #game-hand::-webkit-scrollbar { height: 6px; }
+        #game-hand::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen">
@@ -34,13 +37,14 @@
             </div>
         </div>
         <div id="auth-corner">
+            <!-- Dynamic Login/User info -->
             <button onclick="openAuth()" class="bg-blue-600 px-6 py-2.5 rounded-xl font-black text-sm hover:bg-blue-500 shadow-lg shadow-blue-900/20 transition-all uppercase tracking-wider">Login</button>
         </div>
     </nav>
 
-    <!-- VIEWS -->
+    <!-- MAIN VIEW CONTAINER -->
     <main>
-        <!-- LANDING (Only shown when logged out) -->
+        <!-- LANDING (Logged Out State) -->
         <section id="view-landing" class="tab-content active flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-6 text-center">
             <div class="max-w-2xl">
                 <h1 class="text-7xl font-black font-game mb-6 tracking-tighter leading-none text-white">THE ARENA AWAITS</h1>
@@ -49,7 +53,7 @@
             </div>
         </section>
 
-        <!-- AUTH MODAL (Popup Overlay) -->
+        <!-- AUTH MODAL -->
         <div id="auth-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm">
             <div class="w-full max-w-md bg-slate-900 p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl relative">
                 <button onclick="closeAuth()" class="absolute top-6 right-8 text-slate-500 hover:text-white text-2xl font-bold">×</button>
@@ -64,7 +68,7 @@
             </div>
         </div>
 
-        <!-- AUTHENTICATED HOME -->
+        <!-- AUTHENTICATED HOME (Lobby) -->
         <section id="view-home" class="tab-content max-w-4xl mx-auto py-16 px-6">
             <div class="bg-slate-900 rounded-[3rem] p-16 border border-slate-800 text-center shadow-2xl">
                 <h2 class="text-6xl font-black font-game mb-6 uppercase tracking-tighter">Enter Combat</h2>
@@ -80,35 +84,55 @@
             </div>
         </section>
 
-        <!-- VAULT -->
+        <!-- VAULT (Collection) -->
         <section id="view-vault" class="tab-content max-w-6xl mx-auto py-12 px-6">
             <div class="flex justify-between items-end mb-12">
-                <div><h2 class="text-5xl font-black font-game uppercase">The Vault</h2><p class="text-slate-400 text-lg">Your unique digital collection.</p></div>
-                <div id="vault-stats" class="bg-slate-900 px-8 py-4 rounded-2xl border border-slate-800 flex gap-12"></div>
+                <div>
+                    <h2 class="text-5xl font-black font-game uppercase">The Vault</h2>
+                    <p class="text-slate-400 text-lg">Your unique digital collection.</p>
+                </div>
+                <div id="vault-stats" class="bg-slate-900 px-8 py-4 rounded-2xl border border-slate-800 flex gap-12">
+                    <!-- Stats injected here -->
+                </div>
             </div>
-            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Cards injected here -->
+            </div>
         </section>
 
-        <!-- GAME -->
-        <section id="view-game" class="tab-content fixed inset-0 z-[60] bg-slate-950 p-6">
+        <!-- GAME ARENA -->
+        <section id="view-game" class="tab-content fixed inset-0 z-[60] bg-slate-950 p-6 overflow-hidden">
             <div class="h-full max-w-7xl mx-auto flex flex-col">
-                <div id="game-header" class="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex justify-between items-center mb-6"></div>
+                <div id="game-header" class="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex justify-between items-center mb-6">
+                    <!-- Arena info injected here -->
+                </div>
+                
                 <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-12 items-center">
+                    <!-- Opponent Side -->
                     <div class="flex flex-col items-center gap-6">
-                        <div id="opp-card-slot" class="w-72 h-96 rounded-[2rem] border-2 border-dashed border-slate-800 flex items-center justify-center text-slate-700 font-black uppercase text-center p-10">Waiting...</div>
+                        <div id="opp-card-slot" class="w-64 h-80 rounded-[2rem] border-2 border-dashed border-slate-800 flex items-center justify-center text-slate-700 font-black uppercase text-center p-6 bg-slate-900/30">Waiting...</div>
                         <p id="opp-name" class="font-black text-slate-500 uppercase tracking-widest"></p>
                     </div>
-                    <div class="text-center">
+
+                    <!-- Center result -->
+                    <div class="text-center relative">
                         <div class="text-9xl font-black font-game text-slate-900 select-none opacity-50">VS</div>
-                        <div id="match-result-overlay" class="hidden text-5xl font-black font-game"></div>
+                        <div id="match-result-overlay" class="hidden absolute inset-0 flex items-center justify-center text-5xl font-black font-game text-blue-500 bg-slate-950/80 rounded-full"></div>
                     </div>
+
+                    <!-- Player Side -->
                     <div class="flex flex-col items-center gap-6">
-                        <div id="player-card-slot" class="w-72 h-96 rounded-[2rem] border-2 border-dashed border-blue-900/30 bg-blue-900/5 flex items-center justify-center text-blue-500/30 font-black uppercase text-center p-10">Select Card</div>
+                        <div id="player-card-slot" class="w-64 h-80 rounded-[2rem] border-2 border-dashed border-blue-900/30 bg-blue-900/5 flex items-center justify-center text-blue-500/30 font-black uppercase text-center p-6">Select Card</div>
                         <p class="font-black text-white uppercase tracking-widest">You</p>
                     </div>
                 </div>
-                <div class="mt-8 bg-slate-900/90 glass p-8 rounded-t-[3.5rem] border-t border-slate-800">
-                    <div id="game-hand" class="flex gap-4 overflow-x-auto justify-center"></div>
+
+                <!-- Hand Selection Bar -->
+                <div class="mt-4 bg-slate-900/90 glass p-6 rounded-t-[3rem] border-t border-slate-800">
+                    <p class="text-center text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest">Deploy a Unit</p>
+                    <div id="game-hand" class="flex gap-4 overflow-x-auto pb-4 justify-start lg:justify-center px-4">
+                        <!-- Playable cards injected here -->
+                    </div>
                 </div>
             </div>
         </section>
@@ -116,11 +140,11 @@
         <!-- GUIDE -->
         <section id="view-guide" class="tab-content max-w-3xl mx-auto py-16 px-6">
              <h2 class="text-4xl font-black font-game uppercase mb-8">How to Play</h2>
-             <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 space-y-4 text-slate-400">
-                 <p>1. Matches are played in a random <strong>Arena</strong> with 3 active <strong>Attributes</strong>.</p>
-                 <p>2. Choose a card from your <strong>Vault</strong> to send into battle.</p>
-                 <p>3. If your card type matches the Arena type, your <strong>Special</strong> activates.</p>
-                 <p>4. The winner claims the loser's card permanently!</p>
+             <div class="bg-slate-900 p-10 rounded-[2.5rem] border border-slate-800 space-y-6 text-slate-400 text-lg leading-relaxed">
+                 <p><strong class="text-blue-500">1. ARENAS:</strong> Every match is fought in a random Arena (like Jungle Fortress) which picks 3 specific attributes (e.g., Strength, Speed, Agility).</p>
+                 <p><strong class="text-blue-500">2. SELECTION:</strong> Look at the Arena attributes and choose a card from your hand that has high points in those categories.</p>
+                 <p><strong class="text-blue-500">3. SPECIALS:</strong> If your card's <span class="text-white">Type</span> (Nature/Village) matches the Arena's <span class="text-white">Type</span>, your card's special ability activates!</p>
+                 <p><strong class="text-blue-500">4. WINNING:</strong> The player with the highest total points in the 3 attributes wins. The winner takes the loser's card forever!</p>
              </div>
         </section>
     </main>
@@ -130,6 +154,7 @@
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, updateDoc, deleteDoc, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI",
             authDomain: "triplepower-8dca6.firebaseapp.com",
@@ -144,6 +169,7 @@
         const db = getFirestore(app);
         const appId = 'triplepower-v4-prod';
 
+        // CARD DATA
         const STARTER_DECK = [
             { name: "Ground Graveler", type: "Nature", special: "Focused Training", stats: { Strength: 5, Speed: 15, Agility: 14, Health: 7, Intelligence: 6, Creativity: 13, Accuracy: 10, Stamina: 12, Skill: 8, Strategy: 10 } },
             { name: "Tiny", type: "Nature", special: "Underdog Mentality", stats: { Strength: 6, Speed: 16, Agility: 19, Health: 7, Intelligence: 9, Creativity: 12, Accuracy: 8, Stamina: 10, Skill: 8, Strategy: 5 } },
@@ -167,6 +193,7 @@
         let activeMatchId = null;
         let isLoginMode = true;
 
+        // NAVIGATION LOGIC
         window.navigateTo = (id) => {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${id}`).classList.add('active');
@@ -174,6 +201,7 @@
 
         window.openAuth = () => { document.getElementById('auth-modal').classList.remove('hidden'); };
         window.closeAuth = () => { document.getElementById('auth-modal').classList.add('hidden'); };
+        
         window.toggleAuthMode = () => {
             isLoginMode = !isLoginMode;
             document.getElementById('auth-title').innerText = isLoginMode ? 'Login' : 'Register';
@@ -181,23 +209,34 @@
             document.getElementById('auth-toggle').innerText = isLoginMode ? 'New Agent? Register' : 'Already an Agent? Login';
         };
 
+        // CARD SYNC LOGIC (Ensures the user has the 8 starter cards)
         async function syncCards(user, username) {
             const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data');
             const snap = await getDoc(profileRef);
+            
+            // If user has no data, or card list is empty, give them the starter deck
             if (!snap.exists() || !snap.data().cards || snap.data().cards.length === 0) {
+                const starterWithIds = STARTER_DECK.map(c => ({
+                    ...c, 
+                    instanceId: Math.random().toString(36).substr(2, 9)
+                }));
+                
                 await setDoc(profileRef, {
                     username: username || user.displayName || 'Agent',
-                    wins: 0,
-                    cards: STARTER_DECK.map(c => ({...c, instanceId: Math.random().toString(36).substr(2, 9)}))
+                    wins: snap.exists() ? snap.data().wins : 0,
+                    cards: starterWithIds
                 }, { merge: true });
+                console.log("Collection synchronized: 8 starter cards added.");
             }
         }
 
+        // AUTH SUBMISSION
         document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
             const username = document.getElementById('auth-username').value;
+            
             try {
                 if (isLoginMode) {
                     const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -208,23 +247,31 @@
                     await syncCards(cred.user, username);
                 }
                 closeAuth();
-            } catch (err) { alert(err.message); }
+            } catch (err) { alert("Error: " + err.message); }
         });
 
+        // AUTH STATE LISTENER
         onAuthStateChanged(auth, async user => {
             currentUser = user;
             if (user) {
+                // UI updates for Logged In
                 document.getElementById('auth-corner').innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <div class="text-right"><div class="text-xs font-black uppercase">${user.displayName}</div><div id="nav-wins" class="text-[10px] text-blue-500 font-bold">0 WINS</div></div>
-                        <button onclick="signOut(auth)" class="text-xs font-black text-slate-500 hover:text-red-500 uppercase tracking-widest">Logout</button>
+                    <div class="flex items-center gap-4 bg-slate-900/50 p-2 pl-4 rounded-2xl border border-slate-800">
+                        <div class="text-right">
+                            <div class="text-xs font-black uppercase text-white">${user.displayName}</div>
+                            <div id="nav-wins" class="text-[10px] text-blue-500 font-bold">0 WINS</div>
+                        </div>
+                        <button onclick="signOut(auth)" class="bg-slate-800 p-2 rounded-xl text-slate-500 hover:text-red-500 transition-colors">
+                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        </button>
                     </div>
                 `;
                 document.getElementById('nav-links').classList.remove('hidden');
                 
-                // Ensure cards exist for old accounts too
+                // Force sync check
                 await syncCards(user);
 
+                // Listen to profile updates (wins and card list)
                 onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), snap => {
                     if (snap.exists()) {
                         const data = snap.data();
@@ -233,40 +280,77 @@
                         renderVault();
                     }
                 });
+                
+                // Go to main lobby and hide landing
                 navigateTo('home');
             } else {
+                // Logged out
                 document.getElementById('auth-corner').innerHTML = `<button onclick="openAuth()" class="bg-blue-600 px-6 py-2.5 rounded-xl font-black text-sm hover:bg-blue-500 shadow-lg">Login</button>`;
                 document.getElementById('nav-links').classList.add('hidden');
                 navigateTo('landing');
             }
         });
 
+        // VAULT RENDER
         function renderVault() {
             const grid = document.getElementById('vault-grid');
-            document.getElementById('vault-stats').innerHTML = `<div class="text-center"><p class="text-[10px] text-slate-500 uppercase font-black">Cards</p><p class="font-black text-blue-500">${myCollection.length}</p></div>`;
+            document.getElementById('vault-stats').innerHTML = `
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-500 uppercase font-black">Collection</p>
+                    <p class="font-black text-blue-500 text-xl">${myCollection.length}</p>
+                </div>
+            `;
+            
+            if (myCollection.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-slate-600 font-black uppercase tracking-widest">Searching for digital signals... (No cards found)</div>`;
+                return;
+            }
+
             grid.innerHTML = myCollection.map(c => `
-                <div class="bg-slate-900 p-8 rounded-[2rem] border border-slate-800 card-node">
-                    <p class="text-[10px] font-black text-blue-500 uppercase mb-2">${c.type}</p>
-                    <h4 class="text-2xl font-black mb-4 font-game">${c.name}</h4>
-                    <p class="text-sm text-yellow-500 font-bold uppercase">${c.special}</p>
+                <div class="bg-slate-900 p-8 rounded-[2.5rem] border border-slate-800 card-node group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 blur-3xl rounded-full"></div>
+                    <p class="text-[10px] font-black text-blue-500 uppercase mb-2 tracking-widest">${c.type}</p>
+                    <h4 class="text-2xl font-black mb-4 font-game group-hover:text-blue-400 transition-colors">${c.name}</h4>
+                    <div class="space-y-1 mb-6">
+                        <p class="text-[10px] text-slate-500 font-bold uppercase">Special Ability</p>
+                        <p class="text-sm text-yellow-500 font-bold uppercase leading-tight">${c.special}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        ${Object.entries(c.stats).slice(0,4).map(([k,v]) => `
+                            <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/50">
+                                <p class="text-[8px] text-slate-600 font-black uppercase">${k}</p>
+                                <p class="text-xs font-bold">${v}</p>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             `).join('');
         }
 
+        // MATCHMAKING
         window.startMatchmaking = async () => {
             document.getElementById('lobby-actions').classList.add('hidden');
             document.getElementById('matchmaking-ui').classList.remove('hidden');
+            
             const qRef = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'current');
             const snap = await getDoc(qRef);
+            
             if (snap.exists() && snap.data().p1 !== currentUser.uid) {
+                // Match found!
                 const matchId = `${snap.data().p1}_${currentUser.uid}`;
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', matchId), {
-                    p1: snap.data().p1, p1Name: snap.data().p1Name, p2: currentUser.uid, p2Name: currentUser.displayName,
-                    arena: ARENAS[Math.floor(Math.random() * ARENAS.length)], status: 'active', createdAt: Date.now()
+                    p1: snap.data().p1, 
+                    p1Name: snap.data().p1Name, 
+                    p2: currentUser.uid, 
+                    p2Name: currentUser.displayName,
+                    arena: ARENAS[Math.floor(Math.random() * ARENAS.length)], 
+                    status: 'active', 
+                    createdAt: Date.now()
                 });
                 await deleteDoc(qRef);
                 joinGame(matchId);
             } else {
+                // Create queue
                 await setDoc(qRef, { p1: currentUser.uid, p1Name: currentUser.displayName });
                 const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'matches'), s => {
                     s.docs.forEach(d => { if(d.id.includes(currentUser.uid)) { unsub(); joinGame(d.id); }});
@@ -274,11 +358,25 @@
             }
         };
 
+        window.cancelMatchmaking = async () => {
+             const qRef = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'current');
+             const snap = await getDoc(qRef);
+             if (snap.exists() && snap.data().p1 === currentUser.uid) {
+                 await deleteDoc(qRef);
+             }
+             document.getElementById('lobby-actions').classList.remove('hidden');
+             document.getElementById('matchmaking-ui').classList.add('hidden');
+        };
+
         function joinGame(mid) {
             activeMatchId = mid;
             navigateTo('game');
             onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'matches', mid), snap => {
-                if(snap.exists()) renderGame(snap.data()); else navigateTo('home');
+                if(snap.exists()) renderGame(snap.data()); else {
+                    navigateTo('home');
+                    document.getElementById('lobby-actions').classList.remove('hidden');
+                    document.getElementById('matchmaking-ui').classList.add('hidden');
+                }
             });
         }
 
@@ -287,37 +385,95 @@
             const myCard = isP1 ? m.p1Card : m.p2Card;
             const oppCard = isP1 ? m.p2Card : m.p1Card;
 
-            document.getElementById('game-header').innerHTML = `<h3 class="text-2xl font-black font-game uppercase text-blue-500">${m.arena.name}</h3>`;
+            document.getElementById('game-header').innerHTML = `
+                <div>
+                    <h3 class="text-2xl font-black font-game uppercase text-blue-500 leading-none">${m.arena.name}</h3>
+                    <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-1">Arena Type: ${m.arena.type}</p>
+                </div>
+                <div class="flex gap-4">
+                    ${m.arena.attributes.map(a => `<span class="bg-blue-900/20 px-3 py-1 rounded-full text-[10px] font-black border border-blue-500/20 text-blue-400 uppercase">${a}</span>`).join('')}
+                </div>
+            `;
+            
             document.getElementById('opp-name').innerText = isP1 ? m.p2Name : m.p1Name;
-            document.getElementById('opp-card-slot').innerHTML = oppCard ? (m.winner ? cardBox(oppCard) : 'LOCKED') : 'WAITING';
-            document.getElementById('player-card-slot').innerHTML = myCard ? cardBox(myCard) : 'CHOOSE';
+            document.getElementById('opp-card-slot').innerHTML = oppCard ? (m.winner ? cardBox(oppCard) : '<div class="animate-pulse text-blue-500/50">CARD DEPLOYED</div>') : 'WAITING...';
+            document.getElementById('player-card-slot').innerHTML = myCard ? cardBox(myCard) : '<div class="text-slate-700">NO UNIT</div>';
 
             const hand = document.getElementById('game-hand');
             if(!myCard) {
-                hand.innerHTML = myCollection.map((c, i) => `<div onclick="playCard(${i})" class="w-32 h-44 bg-slate-950 border border-slate-800 p-4 rounded-xl cursor-pointer hover:border-blue-500 text-xs font-black uppercase">Play ${c.name}</div>`).join('');
-            } else { hand.innerHTML = '<div class="text-slate-500 uppercase font-black">Waiting for Result...</div>'; }
+                hand.innerHTML = myCollection.map((c, i) => `
+                    <div onclick="playCard(${i})" class="flex-shrink-0 w-36 bg-slate-950 border border-slate-800 p-4 rounded-2xl cursor-pointer hover:border-blue-500 hover:-translate-y-2 transition-all">
+                        <p class="text-[8px] text-blue-500 font-black uppercase mb-1">${c.type}</p>
+                        <p class="text-sm font-black uppercase mb-2 truncate">${c.name}</p>
+                        <div class="flex flex-wrap gap-1">
+                             ${m.arena.attributes.map(attr => `<span class="text-[8px] bg-slate-900 px-1 rounded border border-slate-800">${c.stats[attr]}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } else { 
+                hand.innerHTML = '<div class="text-slate-500 uppercase font-black text-xs animate-pulse tracking-[0.3em]">Combat in progress...</div>'; 
+            }
 
-            if(isP1 && m.p1Card && m.p2Card && !m.winner) resolve(m);
+            if(isP1 && m.p1Card && m.p2Card && !m.winner) resolveMatch(m);
+            
             if(m.winner) {
-                document.getElementById('match-result-overlay').classList.remove('hidden');
-                document.getElementById('match-result-overlay').innerText = m.winner === currentUser.uid ? 'WINNER' : 'DEFEAT';
-                setTimeout(() => navigateTo('home'), 4000);
+                const overlay = document.getElementById('match-result-overlay');
+                overlay.classList.remove('hidden');
+                overlay.innerText = m.winner === currentUser.uid ? 'VICTORY' : 'DEFEAT';
+                overlay.style.color = m.winner === currentUser.uid ? '#3b82f6' : '#ef4444';
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    navigateTo('home');
+                    document.getElementById('lobby-actions').classList.remove('hidden');
+                    document.getElementById('matchmaking-ui').classList.add('hidden');
+                }, 4000);
             }
         }
 
-        function cardBox(c) { return `<div class="text-left"><p class="text-[10px] text-blue-500 font-black">${c.type}</p><p class="text-xl font-black">${c.name}</p></div>`; }
+        function cardBox(c) { 
+            return `
+                <div class="text-center">
+                    <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest">${c.type}</p>
+                    <p class="text-2xl font-black font-game uppercase">${c.name}</p>
+                    <p class="text-[10px] text-yellow-500 font-bold uppercase mt-2">${c.special}</p>
+                </div>
+            `; 
+        }
 
         window.playCard = async (i) => {
             const field = activeMatchId.startsWith(currentUser.uid) ? 'p1Card' : 'p2Card';
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId), { [field]: myCollection[i] });
         };
 
-        async function resolve(m) {
-            const score = (c) => m.arena.attributes.reduce((s, a) => s + c.stats[a], 0);
-            const w = score(m.p1Card) >= score(m.p2Card) ? m.p1 : m.p2;
+        async function resolveMatch(m) {
+            const calcScore = (c) => m.arena.attributes.reduce((s, a) => s + c.stats[a], 0);
+            const s1 = calcScore(m.p1Card);
+            const s2 = calcScore(m.p2Card);
+            
+            const w = s1 >= s2 ? m.p1 : m.p2;
+            const winnerCard = w === m.p1 ? m.p1Card : m.p2Card;
+            const loserCard = w === m.p1 ? m.p2Card : m.p1Card;
+            const l = w === m.p1 ? m.p2 : m.p1;
+
+            // Update Match Result
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId), { winner: w });
-            await updateDoc(doc(db, 'artifacts', appId, 'users', w, 'profile', 'data'), { wins: increment(1), cards: arrayUnion(w === m.p1 ? m.p2Card : m.p1Card) });
+            
+            // Winner gets the card
+            await updateDoc(doc(db, 'artifacts', appId, 'users', w, 'profile', 'data'), { 
+                wins: increment(1), 
+                cards: arrayUnion({...loserCard, instanceId: Math.random().toString(36).substr(2, 9)}) 
+            });
+
+            // Loser loses the card (simplified: filter by instanceId)
+            const lSnap = await getDoc(doc(db, 'artifacts', appId, 'users', l, 'profile', 'data'));
+            if(lSnap.exists()){
+                const lCards = lSnap.data().cards.filter(c => c.instanceId !== loserCard.instanceId);
+                await updateDoc(doc(db, 'artifacts', appId, 'users', l, 'profile', 'data'), { cards: lCards });
+            }
         }
+
+        window.signOutUser = () => signOut(auth);
+        window.auth = auth; // Global access for logout button
     </script>
 </body>
 </html>
