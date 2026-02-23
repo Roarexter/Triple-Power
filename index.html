@@ -295,28 +295,27 @@ const CARDS_DATA = [
             statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT TO PICK";
 
             screen.innerHTML = `
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    ${gameData.pool.map((card, idx) => `
-                        <div class="card-container">
-                            <div onclick="${isMyTurn ? `pickCard(${idx})` : ''}" class="gradient-border ${isMyTurn ? 'cursor-pointer hover:-translate-y-1' : 'opacity-50 grayscale cursor-not-allowed'} transition-all">
-                                <div class="bg-slate-800 p-3 rounded-lg h-full">
-    <div class="flex justify-between items-start mb-2">
-        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-white/10">${card.type}</span>
-        <span class="text-[10px] font-bold text-yellow-500">LVL ${card.level}</span>
-    </div>
-    <img src="${card.image}" class="w-full h-32 object-cover rounded mb-2 border border-white/10" alt="${card.name}">
-    <h3 class="font-bold text-sm truncate">${card.name}</h3>
-    <p class="text-[9px] text-slate-400 mt-1 italic">${card.special}</p>
-</div>
-                                    <h3 class="font-bold text-sm truncate">${card.name}</h3>
-                                    <p class="text-[9px] text-slate-400 mt-1 italic">${card.special}</p>
-                                </div>
-                            </div>
-                            ${createStatsHTML(card.stats)}
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        ${gameData.pool.map((card, idx) => `
+            <div class="card-container">
+                <div onclick="${isMyTurn ? `pickCard(${idx})` : ''}" class="gradient-border ${isMyTurn ? 'cursor-pointer hover:-translate-y-1' : 'opacity-50 grayscale cursor-not-allowed'} transition-all shadow-md">
+                    <div class="bg-slate-800 p-2 rounded-lg h-full flex flex-col">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${card.type}</span>
+                            <span class="text-[8px] font-bold text-yellow-500">LVL ${card.level}</span>
                         </div>
-                    `).join('')}
+                        
+                        <img src="${card.image}" class="w-full h-24 object-cover rounded mb-1.5 border border-white/5" alt="${card.name}">
+                        
+                        <h3 class="font-bold text-[11px] truncate leading-tight">${card.name}</h3>
+                        <p class="text-[8px] text-slate-500 mt-0.5 italic truncate">${card.special}</p>
+                    </div>
                 </div>
-            `;
+                ${createStatsHTML(card.stats)}
+            </div>
+        `).join('')}
+    </div>
+`;
         }
 
         window.pickCard = async (idx) => {
@@ -384,17 +383,15 @@ const CARDS_DATA = [
                         <div class="flex flex-wrap justify-center gap-4">
                             ${myPlayer.hand.map((card, idx) => `
     <div class="card-container">
-        <div onclick="selectCardForBattle(${idx})" class="w-36 bg-slate-800 p-4 rounded-xl border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all hover:scale-105 shadow-lg">
-            
-            <img src="${card.image}" class="w-full h-24 object-cover rounded-lg mb-2 border border-white/5" alt="${card.name}">
-            
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-[9px] font-bold text-slate-500 px-1.5 py-0.5 bg-white/5 rounded">${card.type}</span>
-                <span class="text-[9px] font-black text-yellow-600">L${card.level}</span>
-            </div>
-            <div class="text-sm font-bold truncate mb-1">${card.name}</div>
-            <div class="text-[8px] leading-tight text-slate-400 italic">${card.special}</div>
-        </div>
+   <div onclick="selectCardForBattle(${idx})" class="w-28 bg-slate-800 p-2.5 rounded-xl border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all hover:scale-105 shadow-lg">
+    <img src="${card.image}" class="w-full h-20 object-cover rounded-lg mb-2 shadow-md" alt="${card.name}">
+    
+    <div class="flex justify-between items-center mb-1">
+        <span class="text-[8px] font-bold text-slate-500 px-1.5 py-0.5 bg-white/5 rounded">${card.type}</span>
+        <span class="text-[8px] font-black text-yellow-600">L${card.level}</span>
+    </div>
+    <div class="text-[11px] font-bold truncate">${card.name}</div>
+</div>
         ${createStatsHTML(card.stats)}
     </div>
 `).join('')}
