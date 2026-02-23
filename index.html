@@ -71,7 +71,7 @@
 
                 <!-- Center Status -->
                 <div class="text-center">
-                    <div id="battle-status" class="text-4xl font-game font-black text-slate-800">ROUND PHASE</div>
+                    <div id="battle-status" class="text-4xl font-game font-black text-slate-800 uppercase tracking-tighter">PREPARING...</div>
                     <div id="round-alert" class="hidden mt-4 px-6 py-3 bg-yellow-500 text-black font-black text-[10px] rounded-xl animate-pulse uppercase tracking-widest"></div>
                     <div id="match-outcome" class="hidden text-5xl font-game font-black text-blue-500 mt-6 animate-bounce"></div>
                 </div>
@@ -100,9 +100,9 @@
     <div id="auth-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="w-full max-w-sm glass p-10 rounded-[2.5rem] shadow-2xl relative border-blue-500/20">
             <button onclick="toggleAuthModal()" class="absolute top-6 right-8 text-slate-500 hover:text-white font-black">X</button>
-            <h3 id="auth-title" class="text-2xl font-game font-black mb-8 text-center text-blue-500">SYSTEM LOGIN</h3>
+            <h3 id="auth-title" class="text-2xl font-game font-black mb-8 text-center text-blue-500 uppercase">System Login</h3>
             <form id="auth-form" class="space-y-4">
-                <input id="auth-user" type="text" placeholder="AGENT NAME" class="hidden w-full bg-slate-900 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-white">
+                <input id="auth-user" type="text" placeholder="AGENT NAME" class="hidden w-full bg-slate-900 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-white uppercase">
                 <input id="auth-email" type="email" placeholder="EMAIL ADDRESS" required class="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-white">
                 <input id="auth-pass" type="password" placeholder="PASSWORD" required class="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-white">
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black uppercase tracking-widest text-sm shadow-lg">Authorize</button>
@@ -115,7 +115,7 @@
     <div id="vault-modal" class="hidden fixed inset-0 z-[60] bg-slate-950 p-12 overflow-y-auto">
         <div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-12">
-                <h2 class="text-4xl font-game font-black text-blue-500 uppercase">The Vault</h2>
+                <h2 class="text-4xl font-game font-black text-blue-500 uppercase tracking-widest">The Vault</h2>
                 <button onclick="hideVault()" class="bg-slate-900 hover:bg-slate-800 p-4 rounded-full border border-slate-800 font-black px-8">CLOSE</button>
             </div>
             <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
@@ -125,13 +125,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, increment, query, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         const firebaseConfig = { apiKey: "AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI", authDomain: "triplepower-8dca6.firebaseapp.com", projectId: "triplepower-8dca6", storageBucket: "triplepower-8dca6.firebasestorage.app", messagingSenderId: "73414403539", appId: "1:73414403539:web:d54faef95d2709a78e3b26" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'triplepower-v8-final';
+        const appId = 'triplepower-v9-matchfix';
 
         const STARTER_DECK = [
             { name: "Ground Graveler", type: "Nature", special: "Focused Training", stats: { Strength: 5, Speed: 15, Agility: 14, Health: 7, Intelligence: 6, Creativity: 13, Accuracy: 10, Stamina: 12, Skill: 8, Strategy: 10 } },
@@ -153,9 +153,9 @@
 
         let currentUser = null, myCollection = [], isLogin = true, activeMatchId = null;
 
-        // UI Helpers
+        // UI HELPERS
         window.toggleAuthModal = () => document.getElementById('auth-modal').classList.toggle('hidden');
-        window.toggleAuthMode = () => { isLogin = !isLogin; document.getElementById('auth-title').innerText = isLogin ? 'SYSTEM LOGIN' : 'CREATE ACCOUNT'; document.getElementById('auth-user').classList.toggle('hidden', isLogin); };
+        window.toggleAuthMode = () => { isLogin = !isLogin; document.getElementById('auth-title').innerText = isLogin ? 'System Login' : 'Create Account'; document.getElementById('auth-user').classList.toggle('hidden', isLogin); };
         window.showVault = () => { renderVault(); document.getElementById('vault-modal').classList.remove('hidden'); };
         window.hideVault = () => document.getElementById('vault-modal').classList.add('hidden');
         window.handleSignOut = async () => { await signOut(auth); window.location.reload(); };
@@ -166,7 +166,7 @@
             try {
                 if (isLogin) await signInWithEmailAndPassword(auth, email, pass);
                 else {
-                    const name = document.getElementById('auth-user').value;
+                    const name = document.getElementById('auth-user').value || 'Agent X';
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     await updateProfile(res.user, { displayName: name });
                 }
@@ -199,74 +199,49 @@
             }
         });
 
-        // Game Engine Logic
-        const calculateScore = (card, arena, team) => {
-            if (!card || !arena) return { total: 0, log: [], special: "" };
-            let total = 0, log = [], specialText = "";
-            
-            // Base Stats
-            arena.attributes.forEach(attr => {
-                let val = card.stats[attr] || 0;
-                total += val;
-                log.push(`${attr}: ${val}`);
-            });
-
-            // Specials (Only if types match)
-            if (card.type === arena.type) {
-                specialText = card.special;
-                switch(card.special) {
-                    case "Battle Ready":
-                        total += 3; // +1 to each of the 3 attributes
-                        log.push("+3 Battle Ready");
-                        break;
-                    case "Reinforcements":
-                        const count = team.filter(c => c.type === card.type).length;
-                        total += count;
-                        log.push(`+${count} Reinforcements`);
-                        break;
-                    case "Focused Training":
-                        total += 2;
-                        log.push("+2 Focused Training");
-                        break;
-                    case "Underdog Mentality":
-                        total += 4;
-                        log.push("+4 Underdog Mentality");
-                        break;
-                }
-            }
-            return { total, log, special: specialText };
-        };
-
+        // MATCHMAKING LOGIC
         window.startMatchmaking = async () => {
             if (!currentUser) return toggleAuthModal();
             document.getElementById('action-buttons').classList.add('hidden');
             document.getElementById('matchmaking-status').classList.remove('hidden');
             
-            const qRef = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'current');
+            const qRef = doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'global');
             const snap = await getDoc(qRef);
 
-            if (snap.exists() && snap.data().p1 !== currentUser.uid) {
-                const mid = `${snap.data().p1}_${currentUser.uid}`;
+            if (snap.exists() && snap.data().p1 && snap.data().p1 !== currentUser.uid) {
+                const p1Data = snap.data();
+                const mid = `${p1Data.p1}_${currentUser.uid}`;
+                // Setup Match
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', mid), {
-                    p1: snap.data().p1, p1Name: snap.data().p1Name, p2: currentUser.uid, p2Name: currentUser.displayName,
-                    p1Cards: snap.data().p1Cards, p2Cards: myCollection, arena: ARENAS[Math.floor(Math.random() * ARENAS.length)], status: 'active', round: 1
+                    p1: p1Data.p1, p1Name: p1Data.p1Name, p1Cards: p1Data.p1Cards,
+                    p2: currentUser.uid, p2Name: currentUser.displayName, p2Cards: myCollection,
+                    arena: ARENAS[Math.floor(Math.random() * ARENAS.length)],
+                    status: 'active', round: 1, lastMove: Date.now()
                 });
+                // Clear Queue
                 await deleteDoc(qRef);
                 joinBattle(mid);
             } else {
-                await setDoc(qRef, { p1: currentUser.uid, p1Name: currentUser.displayName, p1Cards: myCollection });
+                // Join Queue
+                await setDoc(qRef, { p1: currentUser.uid, p1Name: currentUser.displayName, p1Cards: myCollection, time: Date.now() });
                 const unsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'matches'), s => { 
-                    s.docs.forEach(d => { if (d.id.includes(currentUser.uid)) { unsub(); joinBattle(d.id); }}); 
+                    s.docChanges().forEach(change => {
+                        if (change.type === "added" && change.doc.id.includes(currentUser.uid)) {
+                            unsub();
+                            joinBattle(change.doc.id);
+                        }
+                    });
                 });
             }
         };
 
         window.cancelSearch = async () => { 
-            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'current')); 
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'queue', 'global')); 
             document.getElementById('action-buttons').classList.remove('hidden'); 
             document.getElementById('matchmaking-status').classList.add('hidden'); 
         };
 
+        // BATTLE SYSTEM
         function joinBattle(mid) {
             activeMatchId = mid;
             document.getElementById('view-lobby').classList.add('hidden');
@@ -277,11 +252,30 @@
         }
 
         function leaveBattle() { 
+            activeMatchId = null;
             document.getElementById('view-battle').classList.add('hidden'); 
             document.getElementById('view-lobby').classList.remove('hidden'); 
             document.getElementById('action-buttons').classList.remove('hidden'); 
             document.getElementById('matchmaking-status').classList.add('hidden'); 
         }
+
+        const calculateScore = (card, arena, team) => {
+            if (!card || !arena) return { total: 0, log: [], special: "" };
+            let total = 0, log = [], specialText = "";
+            arena.attributes.forEach(attr => {
+                let val = card.stats[attr] || 0;
+                total += val;
+                log.push(`${attr}: ${val}`);
+            });
+            if (card.type === arena.type) {
+                specialText = card.special;
+                if (card.special === "Battle Ready") { total += 3; log.push("+3 Battle Ready"); }
+                if (card.special === "Reinforcements") { const count = team.filter(c => c.type === card.type).length; total += count; log.push(`+${count} Reinforcements`); }
+                if (card.special === "Focused Training") { total += 2; log.push("+2 Focused Training"); }
+                if (card.special === "Underdog Mentality") { total += 4; log.push("+4 Underdog Mentality"); }
+            }
+            return { total, log, special: specialText };
+        };
 
         function renderArena(m) {
             const isP1 = m.p1 === currentUser.uid;
@@ -292,7 +286,7 @@
             document.getElementById('arena-header').innerHTML = `
                 <div>
                     <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest">${m.arena.type} Protocol</p>
-                    <h4 class="text-xl font-game font-black">${m.arena.name}</h4>
+                    <h4 class="text-xl font-game font-black uppercase">${m.arena.name}</h4>
                 </div>
                 <div class="flex gap-2">${m.arena.attributes.map(a => `<span class="bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">${a}</span>`).join('')}</div>
             `;
@@ -305,21 +299,26 @@
             document.getElementById('player-score').innerText = myS.total.toString().padStart(2, '0');
             document.getElementById('opp-score').innerText = (oppPlay && myPlay) ? oppS.total.toString().padStart(2, '0') : '??';
 
+            const status = document.getElementById('battle-status');
+            if (!myPlay && !oppPlay) status.innerText = "SELECT UNIT";
+            else if (myPlay && !oppPlay) status.innerText = "WAITING FOR ENEMY";
+            else if (!myPlay && oppPlay) status.innerText = "ENEMY READY";
+            else status.innerText = "RESOLVING...";
+
             const alertBox = document.getElementById('round-alert');
-            if (myPlay && myS.special) { alertBox.innerText = `Special: ${myS.special}`; alertBox.classList.remove('hidden'); }
-            else if (oppPlay && myPlay && oppS.special) { alertBox.innerText = `Opponent Special: ${oppS.special}`; alertBox.classList.remove('hidden'); }
+            if (myPlay && myS.special) { alertBox.innerText = `Special Activated: ${myS.special}`; alertBox.classList.remove('hidden'); }
             else { alertBox.classList.add('hidden'); }
 
-            if (!myPlay) {
+            if (!myPlay && !m.winner) {
                 document.getElementById('hand-cards').innerHTML = myHand.map((c, i) => `
                     <div onclick="deployCard(${i})" class="flex-shrink-0 w-36 glass p-4 rounded-2xl cursor-pointer hover:border-blue-500 border-slate-800 card-enter">
                         <p class="text-[8px] text-blue-500 font-black uppercase">${c.type}</p>
                         <p class="text-[10px] font-black uppercase truncate">${c.name}</p>
-                        <div class="mt-2 text-[8px] opacity-40">Lv.${c.level || 1} • Stats: ${Object.values(c.stats).reduce((a,b)=>a+b)}</div>
+                        <div class="mt-2 text-[8px] opacity-40">Stats: ${Object.values(c.stats).reduce((a,b)=>a+b)}</div>
                     </div>
                 `).join('');
             } else {
-                document.getElementById('hand-cards').innerHTML = `<p class="text-slate-500 text-xs font-black uppercase animate-pulse">Syncing Round Results...</p>`;
+                document.getElementById('hand-cards').innerHTML = `<p class="text-slate-500 text-xs font-black uppercase animate-pulse">Syncing Tactical Grid...</p>`;
             }
 
             if (isP1 && m.p1Played && m.p2Played && !m.resolving) resolveRound(m);
@@ -328,12 +327,11 @@
                 const out = document.getElementById('match-outcome');
                 out.classList.remove('hidden');
                 out.innerText = m.winner === currentUser.uid ? 'CAMPAIGN VICTORY' : 'DEFEAT';
-                // Sync winner's final cards to their profile
                 if (m.winner === currentUser.uid) {
                     const finalCollection = isP1 ? m.p1Cards : m.p2Cards;
                     updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'), { cards: finalCollection });
                 }
-                setTimeout(() => { if (isP1) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId)); }, 8000);
+                setTimeout(() => { if (isP1 && activeMatchId) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId)); }, 8000);
             }
         }
 
@@ -341,7 +339,7 @@
             return `<div class="text-center p-4 h-full flex flex-col justify-center card-enter">
                 <p class="text-[10px] text-blue-500 font-black mb-2 uppercase">${c.type}</p>
                 <h5 class="text-xl font-game font-black leading-tight uppercase mb-4">${c.name}</h5>
-                <div class="text-[8px] text-yellow-500 font-bold border-t border-slate-800 pt-4 mt-auto uppercase">${c.special}</div>
+                <div class="text-[8px] text-yellow-500 font-bold border-t border-slate-800 pt-4 mt-auto uppercase tracking-widest">${c.special}</div>
             </div>`;
         }
 
@@ -349,29 +347,21 @@
             const isP1 = activeMatchId.startsWith(currentUser.uid);
             const mRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId);
             const mSnap = await getDoc(mRef);
+            if (!mSnap.exists()) return;
             const hand = isP1 ? mSnap.data().p1Cards : mSnap.data().p2Cards;
-            const card = hand[i];
-            await updateDoc(mRef, { [isP1 ? 'p1Played' : 'p2Played']: card });
+            await updateDoc(mRef, { [isP1 ? 'p1Played' : 'p2Played']: hand[i] });
         };
 
         async function resolveRound(m) {
-            const mid = activeMatchId;
-            const mRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', mid);
+            const mRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId);
             await updateDoc(mRef, { resolving: true });
             
             const s1 = calculateScore(m.p1Played, m.arena, m.p1Cards).total;
             const s2 = calculateScore(m.p2Played, m.arena, m.p2Cards).total;
             
             let p1Cards = [...m.p1Cards], p2Cards = [...m.p2Cards];
-            
-            if (s1 > s2) {
-                p1Cards.push(m.p2Played);
-                p2Cards = p2Cards.filter(c => c.instanceId !== m.p2Played.instanceId);
-            } else if (s2 > s1) {
-                p2Cards.push(m.p1Played);
-                p1Cards = p1Cards.filter(c => c.instanceId !== m.p1Played.instanceId);
-            }
-            // If s1 == s2, it's a tie. Both players keep cards.
+            if (s1 > s2) { p1Cards.push(m.p2Played); p2Cards = p2Cards.filter(c => c.instanceId !== m.p2Played.instanceId); }
+            else if (s2 > s1) { p2Cards.push(m.p1Played); p1Cards = p1Cards.filter(c => c.instanceId !== m.p1Played.instanceId); }
 
             setTimeout(async () => {
                 const winner = p1Cards.length === 0 ? m.p2 : (p2Cards.length === 0 ? m.p1 : null);
@@ -395,7 +385,7 @@
                     <div class="grid grid-cols-2 gap-2 opacity-50 text-[8px] font-black uppercase">
                         ${Object.entries(c.stats).map(([k,v]) => `<span>${k}: ${v}</span>`).join('')}
                     </div>
-                    <p class="mt-4 text-[9px] text-yellow-500/80 font-bold italic">${c.special}</p>
+                    <p class="mt-4 text-[9px] text-yellow-500/80 font-bold italic tracking-widest">${c.special}</p>
                 </div>
             `).join('');
         }
