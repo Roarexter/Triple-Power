@@ -15,6 +15,8 @@
         @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60% { content: '...'; } 80%, 100% { content: ''; } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .card-enter { animation: cardPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes cardPop { from { transform: scale(0.8) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
     </style>
 </head>
 <body class="text-slate-100 min-h-screen overflow-hidden">
@@ -55,12 +57,8 @@
 
         <!-- BATTLE ARENA VIEW -->
         <div id="view-battle" class="hidden fixed inset-0 z-40 arena-bg flex flex-col p-6 overflow-hidden">
-            <!-- Round Header -->
-            <div id="arena-header" class="max-w-4xl mx-auto w-full glass p-6 rounded-3xl mb-8 flex justify-between items-center border-blue-500/30">
-                <!-- Injected via JS -->
-            </div>
+            <div id="arena-header" class="max-w-4xl mx-auto w-full glass p-6 rounded-3xl mb-8 flex justify-between items-center border-blue-500/30"></div>
 
-            <!-- Main Battle Grid -->
             <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 items-center max-w-6xl mx-auto w-full gap-8">
                 <!-- Enemy Slot -->
                 <div class="text-center space-y-4">
@@ -71,12 +69,10 @@
                     <div id="opp-score" class="text-3xl font-game font-black text-slate-700">00</div>
                 </div>
 
-                <!-- Center UI / Status -->
+                <!-- Center Status -->
                 <div class="text-center">
                     <div id="battle-status" class="text-4xl font-game font-black text-slate-800">ROUND PHASE</div>
-                    <div id="round-alert" class="hidden mt-4 px-6 py-3 bg-yellow-500 text-black font-black text-[10px] rounded-xl animate-pulse uppercase tracking-widest">
-                        Special Activated
-                    </div>
+                    <div id="round-alert" class="hidden mt-4 px-6 py-3 bg-yellow-500 text-black font-black text-[10px] rounded-xl animate-pulse uppercase tracking-widest"></div>
                     <div id="match-outcome" class="hidden text-5xl font-game font-black text-blue-500 mt-6 animate-bounce"></div>
                 </div>
 
@@ -90,19 +86,17 @@
                 </div>
             </div>
 
-            <!-- Deployment Hand -->
+            <!-- Hand Bar -->
             <div id="deployment-bar" class="max-w-5xl mx-auto w-full glass p-6 rounded-t-[3rem] border-b-0 shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
                 <p class="text-[10px] font-black text-slate-500 uppercase text-center mb-4 tracking-[0.3em]">
                     Your Fleet (<span id="hand-count">0</span> units)
                 </p>
-                <div id="hand-cards" class="flex gap-4 overflow-x-auto no-scrollbar pb-2 justify-start lg:justify-center">
-                    <!-- Cards Injected via JS -->
-                </div>
+                <div id="hand-cards" class="flex gap-4 overflow-x-auto no-scrollbar pb-2 justify-start lg:justify-center"></div>
             </div>
         </div>
     </main>
 
-    <!-- AUTHENTICATION MODAL -->
+    <!-- AUTH MODAL -->
     <div id="auth-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 flex items-center justify-center p-6 backdrop-blur-sm">
         <div class="w-full max-w-sm glass p-10 rounded-[2.5rem] shadow-2xl relative border-blue-500/20">
             <button onclick="toggleAuthModal()" class="absolute top-6 right-8 text-slate-500 hover:text-white font-black">X</button>
@@ -111,43 +105,33 @@
                 <input id="auth-user" type="text" placeholder="AGENT NAME" class="hidden w-full bg-slate-900 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-white">
                 <input id="auth-email" type="email" placeholder="EMAIL ADDRESS" required class="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-white">
                 <input id="auth-pass" type="password" placeholder="PASSWORD" required class="w-full bg-slate-900 border border-slate-800 p-4 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-sm text-white">
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black uppercase tracking-widest text-sm transition-all shadow-lg shadow-blue-900/20">Authorize</button>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-black uppercase tracking-widest text-sm shadow-lg">Authorize</button>
             </form>
             <p onclick="toggleAuthMode()" id="auth-toggle-btn" class="text-center mt-6 text-[10px] font-black text-slate-500 hover:text-blue-400 cursor-pointer uppercase tracking-widest">New Agent? Register Here</p>
         </div>
     </div>
 
-    <!-- VAULT OVERLAY -->
+    <!-- VAULT -->
     <div id="vault-modal" class="hidden fixed inset-0 z-[60] bg-slate-950 p-12 overflow-y-auto">
         <div class="max-w-6xl mx-auto">
             <div class="flex justify-between items-center mb-12">
-                <h2 class="text-4xl font-game font-black text-blue-500 uppercase tracking-tighter">The Vault</h2>
-                <button onclick="hideVault()" class="bg-slate-900 hover:bg-slate-800 p-4 rounded-full border border-slate-800 font-black px-8 transition-colors">CLOSE</button>
+                <h2 class="text-4xl font-game font-black text-blue-500 uppercase">The Vault</h2>
+                <button onclick="hideVault()" class="bg-slate-900 hover:bg-slate-800 p-4 rounded-full border border-slate-800 font-black px-8">CLOSE</button>
             </div>
-            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Collection items injected -->
-            </div>
+            <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, increment, arrayUnion } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // APP CONFIG
-        const firebaseConfig = { 
-            apiKey: "AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI", 
-            authDomain: "triplepower-8dca6.firebaseapp.com", 
-            projectId: "triplepower-8dca6", 
-            storageBucket: "triplepower-8dca6.firebasestorage.app", 
-            messagingSenderId: "73414403539", 
-            appId: "1:73414403539:web:d54faef95d2709a78e3b26" 
-        };
+        const firebaseConfig = { apiKey: "AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI", authDomain: "triplepower-8dca6.firebaseapp.com", projectId: "triplepower-8dca6", storageBucket: "triplepower-8dca6.firebasestorage.app", messagingSenderId: "73414403539", appId: "1:73414403539:web:d54faef95d2709a78e3b26" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = 'triplepower-v6-warfare';
+        const appId = 'triplepower-v8-final';
 
         const STARTER_DECK = [
             { name: "Ground Graveler", type: "Nature", special: "Focused Training", stats: { Strength: 5, Speed: 15, Agility: 14, Health: 7, Intelligence: 6, Creativity: 13, Accuracy: 10, Stamina: 12, Skill: 8, Strategy: 10 } },
@@ -169,14 +153,13 @@
 
         let currentUser = null, myCollection = [], isLogin = true, activeMatchId = null;
 
-        // UI ACTIONS
+        // UI Helpers
         window.toggleAuthModal = () => document.getElementById('auth-modal').classList.toggle('hidden');
         window.toggleAuthMode = () => { isLogin = !isLogin; document.getElementById('auth-title').innerText = isLogin ? 'SYSTEM LOGIN' : 'CREATE ACCOUNT'; document.getElementById('auth-user').classList.toggle('hidden', isLogin); };
         window.showVault = () => { renderVault(); document.getElementById('vault-modal').classList.remove('hidden'); };
         window.hideVault = () => document.getElementById('vault-modal').classList.add('hidden');
         window.handleSignOut = async () => { await signOut(auth); window.location.reload(); };
 
-        // AUTH HANDLER
         document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('auth-email').value, pass = document.getElementById('auth-pass').value;
@@ -206,17 +189,54 @@
                             <p id="win-counter" class="text-[8px] text-slate-500 font-bold tracking-widest">0 WINS</p>
                         </div>
                         <button onclick="handleSignOut()" class="w-10 h-10 rounded-full border border-slate-800 flex items-center justify-center hover:bg-red-500/10 transition-colors">
-                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7"></path></svg>
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m4 4H7"></path></svg>
                         </button>
                     </div>
                 `;
                 onSnapshot(ref, s => { if (s.exists()) { myCollection = s.data().cards; document.getElementById('win-counter').innerText = `${s.data().wins} WINS`; document.getElementById('hand-count').innerText = myCollection.length; }});
             } else {
-                document.getElementById('auth-zone').innerHTML = `<button onclick="toggleAuthModal()" class="text-xs font-black uppercase tracking-widest hover:text-blue-400 transition-colors">Connect System</button>`;
+                document.getElementById('auth-zone').innerHTML = `<button onclick="toggleAuthModal()" class="text-xs font-black uppercase tracking-widest">Connect System</button>`;
             }
         });
 
-        // MATCHMAKING
+        // Game Engine Logic
+        const calculateScore = (card, arena, team) => {
+            if (!card || !arena) return { total: 0, log: [], special: "" };
+            let total = 0, log = [], specialText = "";
+            
+            // Base Stats
+            arena.attributes.forEach(attr => {
+                let val = card.stats[attr] || 0;
+                total += val;
+                log.push(`${attr}: ${val}`);
+            });
+
+            // Specials (Only if types match)
+            if (card.type === arena.type) {
+                specialText = card.special;
+                switch(card.special) {
+                    case "Battle Ready":
+                        total += 3; // +1 to each of the 3 attributes
+                        log.push("+3 Battle Ready");
+                        break;
+                    case "Reinforcements":
+                        const count = team.filter(c => c.type === card.type).length;
+                        total += count;
+                        log.push(`+${count} Reinforcements`);
+                        break;
+                    case "Focused Training":
+                        total += 2;
+                        log.push("+2 Focused Training");
+                        break;
+                    case "Underdog Mentality":
+                        total += 4;
+                        log.push("+4 Underdog Mentality");
+                        break;
+                }
+            }
+            return { total, log, special: specialText };
+        };
+
         window.startMatchmaking = async () => {
             if (!currentUser) return toggleAuthModal();
             document.getElementById('action-buttons').classList.add('hidden');
@@ -263,86 +283,65 @@
             document.getElementById('matchmaking-status').classList.add('hidden'); 
         }
 
-        // SCORING LOGIC
-        const getCardScore = (card, arena) => {
-            if (!card || !arena) return { total: 0, special: false };
-            let total = arena.attributes.reduce((s, a) => s + (card.stats[a] || 0), 0);
-            let special = card.type === arena.type;
-            if (special && card.special === "Battle Ready") total += 3; // +1 to each of the 3 attributes
-            return { total, special };
-        };
-
         function renderArena(m) {
             const isP1 = m.p1 === currentUser.uid;
             const myHand = isP1 ? m.p1Cards : m.p2Cards;
             const myPlay = isP1 ? m.p1Played : m.p2Played;
             const oppPlay = isP1 ? m.p2Played : m.p1Played;
 
-            // Update Arena Header
             document.getElementById('arena-header').innerHTML = `
                 <div>
                     <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest">${m.arena.type} Protocol</p>
                     <h4 class="text-xl font-game font-black">${m.arena.name}</h4>
                 </div>
-                <div class="flex gap-2">
-                    ${m.arena.attributes.map(a => `<span class="bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">${a}</span>`).join('')}
-                </div>
+                <div class="flex gap-2">${m.arena.attributes.map(a => `<span class="bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full text-[10px] font-black uppercase">${a}</span>`).join('')}</div>
             `;
 
-            // Display Scores
-            const myS = getCardScore(myPlay, m.arena);
-            const oppS = getCardScore(oppPlay, m.arena);
+            const myS = calculateScore(myPlay, m.arena, myHand);
+            const oppS = calculateScore(oppPlay, m.arena, isP1 ? m.p2Cards : m.p1Cards);
 
-            document.getElementById('opp-card').innerHTML = oppPlay ? cardUI(oppPlay) : `<span class="text-slate-700 uppercase font-black text-xs animate-pulse">Scanning Grid...</span>`;
-            document.getElementById('player-card').innerHTML = myPlay ? cardUI(myPlay) : `<span class="text-blue-500/30 uppercase font-black text-xs">Awaiting Command</span>`;
-            
+            document.getElementById('opp-card').innerHTML = oppPlay ? cardUI(oppPlay) : `<span class="text-slate-700 font-black text-xs animate-pulse">Scanning Grid...</span>`;
+            document.getElementById('player-card').innerHTML = myPlay ? cardUI(myPlay) : `<span class="text-blue-500/30 font-black text-xs">Awaiting Command</span>`;
             document.getElementById('player-score').innerText = myS.total.toString().padStart(2, '0');
             document.getElementById('opp-score').innerText = (oppPlay && myPlay) ? oppS.total.toString().padStart(2, '0') : '??';
-            
-            // Special Alerts
+
             const alertBox = document.getElementById('round-alert');
-            if (myPlay && myS.special) {
-                alertBox.innerText = `Special Activated: ${myPlay.special}`;
-                alertBox.classList.remove('hidden');
-            } else if (oppPlay && myPlay && oppS.special) {
-                alertBox.innerText = `Enemy Special: ${oppPlay.special}`;
-                alertBox.classList.remove('hidden');
-            } else {
-                alertBox.classList.add('hidden');
-            }
+            if (myPlay && myS.special) { alertBox.innerText = `Special: ${myS.special}`; alertBox.classList.remove('hidden'); }
+            else if (oppPlay && myPlay && oppS.special) { alertBox.innerText = `Opponent Special: ${oppS.special}`; alertBox.classList.remove('hidden'); }
+            else { alertBox.classList.add('hidden'); }
 
-            document.getElementById('hand-count').innerText = myHand.length;
-
-            // Render Hand
             if (!myPlay) {
                 document.getElementById('hand-cards').innerHTML = myHand.map((c, i) => `
-                    <div onclick="deployCard(${i})" class="flex-shrink-0 w-36 glass p-4 rounded-2xl cursor-pointer hover:border-blue-500 transition-all border-slate-800">
+                    <div onclick="deployCard(${i})" class="flex-shrink-0 w-36 glass p-4 rounded-2xl cursor-pointer hover:border-blue-500 border-slate-800 card-enter">
                         <p class="text-[8px] text-blue-500 font-black uppercase">${c.type}</p>
                         <p class="text-[10px] font-black uppercase truncate">${c.name}</p>
-                        <div class="mt-2 text-[8px] opacity-40">Total: ${Object.values(c.stats).reduce((a,b)=>a+b)}</div>
+                        <div class="mt-2 text-[8px] opacity-40">Lv.${c.level || 1} • Stats: ${Object.values(c.stats).reduce((a,b)=>a+b)}</div>
                     </div>
                 `).join('');
             } else {
-                document.getElementById('hand-cards').innerHTML = `<p class="text-slate-500 text-xs font-black uppercase animate-pulse">Syncing Battle Round ${m.round}...</p>`;
+                document.getElementById('hand-cards').innerHTML = `<p class="text-slate-500 text-xs font-black uppercase animate-pulse">Syncing Round Results...</p>`;
             }
 
-            // Execute Round Resolution
             if (isP1 && m.p1Played && m.p2Played && !m.resolving) resolveRound(m);
 
-            // Match Over
             if (m.winner) {
                 const out = document.getElementById('match-outcome');
                 out.classList.remove('hidden');
-                out.innerText = m.winner === currentUser.uid ? 'CAMPAIGN VICTORY' : 'RETREAT';
-                setTimeout(() => { if (isP1) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId)); }, 6000);
+                out.innerText = m.winner === currentUser.uid ? 'CAMPAIGN VICTORY' : 'DEFEAT';
+                // Sync winner's final cards to their profile
+                if (m.winner === currentUser.uid) {
+                    const finalCollection = isP1 ? m.p1Cards : m.p2Cards;
+                    updateDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profile', 'data'), { cards: finalCollection });
+                }
+                setTimeout(() => { if (isP1) deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId)); }, 8000);
             }
         }
 
         function cardUI(c) {
-            return `<div class="text-center p-4 h-full flex flex-col justify-center">
-                <p class="text-[10px] text-blue-500 font-black mb-2 tracking-widest uppercase">${c.type}</p>
+            return `<div class="text-center p-4 h-full flex flex-col justify-center card-enter">
+                <p class="text-[10px] text-blue-500 font-black mb-2 uppercase">${c.type}</p>
                 <h5 class="text-xl font-game font-black leading-tight uppercase mb-4">${c.name}</h5>
-                <div class="text-[8px] text-yellow-500 font-bold italic border-t border-slate-800 pt-4 mt-auto uppercase tracking-tighter">${c.special}</div>
+                <div class="text-[8px] text-yellow-500 font-bold border-t border-slate-800 pt-4 mt-auto uppercase">${c.special}</div>
             </div>`;
         }
 
@@ -351,18 +350,20 @@
             const mRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId);
             const mSnap = await getDoc(mRef);
             const hand = isP1 ? mSnap.data().p1Cards : mSnap.data().p2Cards;
-            await updateDoc(mRef, { [isP1 ? 'p1Played' : 'p2Played']: hand[i] });
+            const card = hand[i];
+            await updateDoc(mRef, { [isP1 ? 'p1Played' : 'p2Played']: card });
         };
 
         async function resolveRound(m) {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId), { resolving: true });
+            const mid = activeMatchId;
+            const mRef = doc(db, 'artifacts', appId, 'public', 'data', 'matches', mid);
+            await updateDoc(mRef, { resolving: true });
             
-            const s1 = getCardScore(m.p1Played, m.arena).total;
-            const s2 = getCardScore(m.p2Played, m.arena).total;
+            const s1 = calculateScore(m.p1Played, m.arena, m.p1Cards).total;
+            const s2 = calculateScore(m.p2Played, m.arena, m.p2Cards).total;
             
             let p1Cards = [...m.p1Cards], p2Cards = [...m.p2Cards];
             
-            // Logic: Winner takes the loser's card
             if (s1 > s2) {
                 p1Cards.push(m.p2Played);
                 p2Cards = p2Cards.filter(c => c.instanceId !== m.p2Played.instanceId);
@@ -370,15 +371,15 @@
                 p2Cards.push(m.p1Played);
                 p1Cards = p1Cards.filter(c => c.instanceId !== m.p1Played.instanceId);
             }
+            // If s1 == s2, it's a tie. Both players keep cards.
 
-            // Wait 3 seconds for players to see scores before resetting for next round
             setTimeout(async () => {
                 const winner = p1Cards.length === 0 ? m.p2 : (p2Cards.length === 0 ? m.p1 : null);
                 if (winner) {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId), { winner, resolving: false });
+                    await updateDoc(mRef, { winner, p1Cards, p2Cards, resolving: false });
                     await updateDoc(doc(db, 'artifacts', appId, 'users', winner, 'profile', 'data'), { wins: increment(1) });
                 } else {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'matches', activeMatchId), {
+                    await updateDoc(mRef, {
                         p1Cards, p2Cards, p1Played: null, p2Played: null, resolving: false,
                         arena: ARENAS[Math.floor(Math.random() * ARENAS.length)], round: increment(1)
                     });
@@ -388,13 +389,13 @@
 
         function renderVault() {
             document.getElementById('vault-grid').innerHTML = myCollection.map(c => `
-                <div class="glass p-8 rounded-[2rem] border-slate-800 hover:border-blue-500/50 transition-colors">
-                    <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest">${c.type}</p>
-                    <h5 class="text-xl font-game font-black uppercase mb-4 tracking-tighter">${c.name}</h5>
-                    <div class="grid grid-cols-2 gap-2 opacity-50 text-[8px] font-black uppercase tracking-tight">
+                <div class="glass p-8 rounded-[2rem] border-slate-800 hover:border-blue-500/50 transition-all">
+                    <p class="text-[10px] font-black text-blue-500 uppercase">${c.type}</p>
+                    <h5 class="text-xl font-game font-black uppercase mb-4">${c.name}</h5>
+                    <div class="grid grid-cols-2 gap-2 opacity-50 text-[8px] font-black uppercase">
                         ${Object.entries(c.stats).map(([k,v]) => `<span>${k}: ${v}</span>`).join('')}
                     </div>
-                    <p class="mt-4 text-[9px] text-yellow-500/80 italic font-bold">Special: ${c.special}</p>
+                    <p class="mt-4 text-[9px] text-yellow-500/80 font-bold italic">${c.special}</p>
                 </div>
             `).join('');
         }
