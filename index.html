@@ -449,67 +449,98 @@ function updateBackgroundTheme() {
     const card1 = gameData.activeCards[1];
     if (!card0 || !card1) return;
 
+    // We create a copy of the battlefield attributes so we can modify them
     let activeBattleAttrs = [...field.attrs];
     let activations = ["", ""]; 
     let finalScores = [0, 0];
 
-    // --- PHASE 1: FIELD MODIFICATION ---
+    // --- PHASE 1: FIELD MODIFICATION (Narrow It Down) ---
     [card0, card1].forEach((card, i) => {
         const matching = (card.type === field.type || card.special === "Set My Own Rules");
         if (matching && card.special === "Narrow It Down") {
-            let weakest = activeBattleAttrs[0];
-            activeBattleAttrs.forEach(a => { 
-                if (card.stats[a] < card.stats[weakest]) weakest = a; 
-            });
+            // Find weakest attribute among the battlefield set
+            let weakest = activeBattleAttrs.reduce((prev, curr) => 
+                card.stats[curr] < card.stats[prev] ? curr : prev
+            );
+            // Drop it for both
             activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakest);
-            activations[i] = "Special Activated: Removed weakest attribute!";
+            activations[i] = `Special: ${weakest.toUpperCase()} dropped!`;
         }
     });
 
-    // --- PHASE 2: SCORE & ALL 8 SPECIALS ---
+    // --- PHASE 2: SCORE CALCULATION ---
     [card0, card1].forEach((card, i) => {
-        const oppCard = i === 0 ? card1 : card0;
-        const myHand = gameData.players[i].hand.length;
-        const oppHand = gameData.players[1 - i].hand.length;
+        const oppIdx = 1 - i;
         const matching = (card.type === field.type || card.special === "Set My Own Rules");
-
-        // Base Points
+        
+        // Base Score
         activeBattleAttrs.forEach(attr => { finalScores[i] += card.stats[attr]; });
 
-        // Special Bonuses (Only if type matches or "Set My Own Rules" is used)
         if (matching) {
-            if (card.special === "Set My Own Rules" && card.type !== field.type) {
-                activations[i] = "Special Activated: Ignoring battlefield type!";
-            }
-            if (card.special === "Underdog Mentality" && card.level < oppCard.level) { 
-                finalScores[i] += 5; 
-                activations[i] = "Special Activated: +5 Underdog Bonus!";
-            }
-            if (card.special === "Battle Ready") { 
-                finalScores[i] += (activeBattleAttrs.length * 2); 
-                activations[i] = `Special Activated: +${activeBattleAttrs.length * 2} Preparedness Bonus!`;
-            }
-            if (card.special === "Reinforcements" || card.special === "Bonus Training") {
-                finalScores[i] += 4;
-                activations[i] = "Special Activated: +4 Training bonus!";
-            }
             if (card.special === "Focused Training") {
-                finalScores[i] += 5;
-                activations[i] = "Special Activated: +5 Focused attribute bonus!";
+                finalScores[i] += 2;
+                activations[i] = "Special: +2 attribute total!";
             }
-            if (card.special === "Rescue Mission" && myHand < oppHand) {
-                finalScores[i] += 6;
-                activations[i] = "Special Activated: +6 Rescue comeback bonus!";
+            if (card.special === "Underdog Mentality" && card.level < [card0, card1][oppIdx].level) {
+                finalScores[i] += 5;
+                activations[i] = "Special: +5 Underdog bonus!";
+            }
+            if (card.special === "Set My Own Rules") {
+                // Best attribute not in arena
+                let otherAttrs = Object.keys(card.stats).filter(a => !activeBattleAttrs.includes(a) && a !== "Total");
+                let bestAttr = otherAttrs.reduce((a, b) => card.stats[a] > card.stats[b] ? a : b);
+                finalScores[i] += card.stats[bestAttr];
+                finalScores[oppIdx] += [card0, card1][oppIdx].stats[bestAttr];
+                activations[i] = `Rules Set: Added ${bestAttr.toUpperCase()}!`;
+            }
+            if (card.special === "Reinforcements") {
+                const sameTypeCount = gameData.players[i].hand.filter(c => c.type === card.type).length;
+                finalScores[i] += sameTypeCount;
+                activations[i] = `Special: +${sameTypeCount} Reinforcements!`;
+            }
+            if (card.special === "Battle Ready") {
+                finalScores[i] += activeBattleAttrs.length;
+                activations[i] = "Special: All attributes +1!";
+            }
+            if (card.special === "Rescue Mission") {
+                finalScores[i] -= 3;
+                activations[i] = "RESCUE: Regaining lost ally (-3 score)";
+            }
+            if (card.special === "Bonus Training") {
+                let strongest = Object.keys(card.stats).filter(a => a !== "Total")
+                    .reduce((a, b) => card.stats[a] > card.stats[b] ? a : b);
+                finalScores[i] += 5;
+                activations[i] = `Special: +5 bonus (${strongest})!`;
             }
         }
     });
 
-    // --- PHASE 3: SYNC TO CLOUD ---
+    // --- PHASE 3: WINNER & CARD TRANSFERS ---
     const winnerIdx = finalScores[0] >= finalScores[1] ? 0 : 1;
     const loserIdx = 1 - winnerIdx;
-    const newPlayers = JSON.parse(JSON.stringify(gameData.players));
-    newPlayers[winnerIdx].hand.push(gameData.activeCards[loserIdx]);
     
+    // Create a deep copy of players to modify hands
+    let newPlayers = JSON.parse(JSON.stringify(gameData.players));
+
+    // Standard Rule: Winner takes the card played by the loser
+    const cardWon = gameData.activeCards[loserIdx];
+    newPlayers[winnerIdx].hand.push(cardWon);
+
+    // SPECIAL: Rescue Mission Transfer Logic
+    [0, 1].forEach(i => {
+        if (activations[i].includes("RESCUE")) {
+            const opponentIdx = 1 - i;
+            // Check if the opponent actually has cards to give back
+            // (Excluding the card they just played/won)
+            if (newPlayers[opponentIdx].hand.length > 0) {
+                // Take the last card added to the opponent's hand and give it back
+                const regainedCard = newPlayers[opponentIdx].hand.pop();
+                newPlayers[i].hand.push(regainedCard);
+            }
+        }
+    });
+
+    // Determine if the game is over (loser has 0 cards)
     let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
 
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
@@ -519,10 +550,9 @@ function updateBackgroundTheme() {
             scores: finalScores,
             winnerIdx,
             attrs: activeBattleAttrs,
-            activations: activations // MUST INCLUDE THIS
+            activations: activations
         }
     });
-}
 
         function renderResultUI() {
     const res = gameData.battleResults;
