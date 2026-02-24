@@ -145,7 +145,7 @@ const CARDS_DATA = [
             if (user) {
                 currentUser = user;
                 userInfo.innerText = `Logged in as: ${user.uid}`;
-                renderMainMenu();
+                Menu();
             }
         });
 
@@ -198,14 +198,14 @@ function updateBackgroundTheme() {
             `;
 
 async function startAIGame() {
+    console.log("Starting AI Game..."); // Check your browser console (F12) for this!
     playerRole = 'p0';
     gameId = 'local_ai'; 
     
-    // Manually setting up the game object instead of fetching from Firebase
     gameData = {
         id: gameId,
         status: 'drafting',
-        isAI: true, // This flag tells the rest of the code to stay local
+        isAI: true,
         players: [
             { uid: currentUser.uid, name: "You", hand: [] },
             { uid: 'ai_bot', name: "Computer", hand: [] }
@@ -218,11 +218,10 @@ async function startAIGame() {
         battleResults: null
     };
 
-    // Trigger the UI to render the draft screen immediately
     processGameState();
 }
             
-            document.getElementById('cancel-match').onclick = () => renderMainMenu();
+            document.getElementById('cancel-match').onclick = () => Menu();
 
             const lobbyRef = doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game');
             const lobbiesSnap = await getDoc(lobbyRef);
@@ -313,27 +312,26 @@ function runAILogic() {
 }
         
         function processGameState() {
-    updateBackgroundTheme();
+    updateBackgroundTheme(); 
 
-    // Trigger AI moves if it is a local game
     if (gameData.isAI) runAILogic(); 
 
-    // Bypass the online waiting screen if playing vs Computer
+    // Bypass the waiting screen if playing against AI
     if (gameData.status === 'drafting' && !gameData.players[1].uid && !gameData.isAI) {
         renderWaitingForOpponent();
         return;
     }
 
-            if (gameData.status === 'drafting') {
-                renderDraft();
-            } else if (gameData.status === 'battle_selection') {
-                renderBattleSelection();
-            } else if (gameData.status === 'battle_result') {
-                renderResultUI();
-            } else if (gameData.status === 'finished') {
-                renderEndGame();
-            }
-        }
+    if (gameData.status === 'drafting') {
+        renderDraft();
+    } else if (gameData.status === 'battle_selection') {
+        renderBattleSelection();
+    } else if (gameData.status === 'battle_result') {
+        renderResultUI();
+    } else if (gameData.status === 'finished') {
+        renderEndGame();
+    }
+}
 
         function renderMainMenu() {
     screen.innerHTML = `
@@ -351,8 +349,9 @@ function runAILogic() {
             </div>
         </div>
     `;
+    // These lines MUST be after the innerHTML assignment
     document.getElementById('find-match-btn').onclick = startMatchmaking;
-    document.getElementById('play-ai-btn').onclick = startAIGame; // Link the function here
+    document.getElementById('play-ai-btn').onclick = startAIGame; 
     statusText.innerText = "Connect with a player or face the bot.";
 }
 
