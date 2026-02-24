@@ -461,38 +461,47 @@ function updateBackgroundTheme() {
     let activations = ["", ""]; 
     let finalScores = [0, 0];
 
-    // --- PHASE 1: FIELD MODIFICATION ---
+    // --- PHASE 1: FIELD MODIFICATION (Narrow It Down - Village Only) ---
     [card0, card1].forEach((card, i) => {
-        const matching = (card.type === field.type || card.special === "Set My Own Rules");
-        if (matching && card.special === "Narrow It Down") {
-            try {
-                let weakest = activeBattleAttrs.reduce((prev, curr) => 
-                    (card.stats[curr] || 0) < (card.stats[prev] || 0) ? curr : prev
-                );
-                activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakest);
-                activations[i] = `Special: ${weakest.toUpperCase()} dropped!`;
-            } catch (e) { console.error("Narrow It Down error:", e); }
+        // Standard Check: Type must match field type
+        const typeMatches = (card.type === field.type);
+        
+        if (typeMatches && card.special === "Narrow It Down") {
+            let weakest = activeBattleAttrs.reduce((prev, curr) => 
+                (card.stats[curr] || 0) < (card.stats[prev] || 0) ? curr : prev
+            );
+            activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakest);
+            activations[i] = `Special: ${weakest.toUpperCase()} dropped!`;
         }
     });
 
-    // --- PHASE 2: SCORE CALCULATION ---
+    // --- PHASE 2: SCORE CALCULATION & TYPE-GATED SPECIALS ---
     [card0, card1].forEach((card, i) => {
         const oppIdx = 1 - i;
         const oppCard = [card0, card1][oppIdx];
-        const matching = (card.type === field.type || card.special === "Set My Own Rules");
+        const typeMatches = (card.type === field.type);
         
-        // Base Score calculation
+        // 1. Calculate Base Score (Everyone gets this)
         activeBattleAttrs.forEach(attr => { 
             finalScores[i] += (card.stats[attr] || 0); 
         });
 
-        if (matching && card.special) {
-            // Underdog Mentality
-            if (card.special === "Underdog Mentality" && oppCard && card.level < oppCard.level) {
+        // 2. ONLY run specials if the card type matches the battlefield type
+        if (typeMatches && card.special) {
+            
+            // FOCUSED TRAINING (Nature)
+            if (card.special === "Focused Training") {
+                finalScores[i] += 2;
+                activations[i] = "Special: +2 attribute total!";
+            }
+            
+            // UNDERDOG MENTALITY (Nature)
+            else if (card.special === "Underdog Mentality" && card.level < oppCard.level) {
                 finalScores[i] += 5;
                 activations[i] = "Special: +5 Underdog bonus!";
             }
-            // Set My Own Rules
+
+            // SET MY OWN RULES (Nature)
             else if (card.special === "Set My Own Rules") {
                 let otherAttrs = Object.keys(card.stats).filter(a => !activeBattleAttrs.includes(a) && a !== "Total" && typeof card.stats[a] === 'number');
                 if (otherAttrs.length > 0) {
@@ -502,31 +511,32 @@ function updateBackgroundTheme() {
                     activations[i] = `Rules Set: Added ${bestAttr.toUpperCase()}!`;
                 }
             }
-            // Focused Training
-            else if (card.special === "Focused Training") {
-                finalScores[i] += 2;
-                activations[i] = "Special: +2 attribute total!";
-            }
-            // Reinforcements
+
+            // REINFORCEMENTS (Nature)
             else if (card.special === "Reinforcements") {
                 const sameTypeCount = gameData.players[i].hand.filter(c => c.type === card.type).length;
                 finalScores[i] += sameTypeCount;
                 activations[i] = `Special: +${sameTypeCount} Reinforcements!`;
             }
-            // Battle Ready
+
+            // BATTLE READY (Village)
             else if (card.special === "Battle Ready") {
                 finalScores[i] += activeBattleAttrs.length;
                 activations[i] = "Special: All attributes +1!";
             }
-            // Rescue Mission
+
+            // RESCUE MISSION (Village)
             else if (card.special === "Rescue Mission") {
                 finalScores[i] -= 3;
                 activations[i] = "RESCUE: Regaining lost ally (-3 score)";
             }
-            // Bonus Training
+
+            // BONUS TRAINING (Village)
             else if (card.special === "Bonus Training") {
+                let strongest = Object.keys(card.stats).filter(a => a !== "Total")
+                    .reduce((a, b) => (card.stats[a] || 0) > (card.stats[b] || 0) ? a : b);
                 finalScores[i] += 5;
-                activations[i] = "Special: +5 Bonus Training!";
+                activations[i] = `Special: +5 bonus (${strongest})!`;
             }
         }
     });
