@@ -198,14 +198,13 @@ function updateBackgroundTheme() {
             `;
 
 async function startAIGame() {
-    console.log("Starting AI Game..."); // Check your browser console (F12) for this!
     playerRole = 'p0';
     gameId = 'local_ai'; 
     
     gameData = {
         id: gameId,
         status: 'drafting',
-        isAI: true,
+        isAI: true, // Flag to keep logic local
         players: [
             { uid: currentUser.uid, name: "You", hand: [] },
             { uid: 'ai_bot', name: "Computer", hand: [] }
@@ -280,31 +279,22 @@ async function startAIGame() {
 function runAILogic() {
     if (!gameData.isAI || gameData.status === 'finished') return;
 
-    // AI Drafting Logic
+    // AI Drafting: If it's the computer's turn (p1)
     if (gameData.status === 'drafting') {
         const pIndex = gameData.draftOrder[gameData.draftStep];
-        if (pIndex === 1) { // If it's the Computer's turn
-            setTimeout(() => pickCard(0), 1000); // 1-second delay for realism
+        if (pIndex === 1) { 
+            setTimeout(() => pickCard(0), 1000); // Wait 1s then pick first available card
         }
     }
 
-    // AI Battle Selection Logic
+    // AI Battle: If computer hasn't picked a card yet
     if (gameData.status === 'battle_selection') {
         if (gameData.activeCards[1] === null) {
             setTimeout(() => {
                 const aiHand = gameData.players[1].hand;
                 if (aiHand.length > 0) {
-                    // Logic: Find card with highest sum of current battlefield attributes
-                    let bestIdx = 0;
-                    let bestScore = -1;
-                    aiHand.forEach((card, idx) => {
-                        let score = gameData.battlefield.attrs.reduce((sum, a) => sum + (card.stats[a] || 0), 0);
-                        if (score > bestScore) {
-                            bestScore = score;
-                            bestIdx = idx;
-                        }
-                    });
-                    selectCardForBattle(bestIdx);
+                    // Simple AI: Picks the first card in its hand
+                    selectCardForBattle(0);
                 }
             }, 1500);
         }
@@ -314,9 +304,10 @@ function runAILogic() {
         function processGameState() {
     updateBackgroundTheme(); 
 
+    // Trigger AI if applicable
     if (gameData.isAI) runAILogic(); 
 
-    // Bypass the waiting screen if playing against AI
+    // Don't show "Waiting for Opponent" if playing against AI
     if (gameData.status === 'drafting' && !gameData.players[1].uid && !gameData.isAI) {
         renderWaitingForOpponent();
         return;
@@ -349,10 +340,9 @@ function runAILogic() {
             </div>
         </div>
     `;
-    // These lines MUST be after the innerHTML assignment
     document.getElementById('find-match-btn').onclick = startMatchmaking;
-    document.getElementById('play-ai-btn').onclick = startAIGame; 
-    statusText.innerText = "Connect with a player or face the bot.";
+    document.getElementById('play-ai-btn').onclick = startAIGame; // This fixes the "not defined" error
+    statusText.innerText = "Select a mode to begin.";
 }
 
         function renderWaitingForOpponent() {
