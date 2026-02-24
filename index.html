@@ -520,7 +520,10 @@ function updateBackgroundTheme() {
     const loserIdx = 1 - winnerIdx;
     
     // Create a deep copy of players to modify hands
-    let newPlayers = JSON.parse(JSON.stringify(gameData.players));
+    let newPlayers = gameData.players.map(player => ({
+        ...player,
+        hand: [...player.hand] 
+    }));
 
     // Standard Rule: Winner takes the card played by the loser
     const cardWon = gameData.activeCards[loserIdx];
