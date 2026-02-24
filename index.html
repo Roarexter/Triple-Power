@@ -199,12 +199,13 @@ function updateBackgroundTheme() {
 
 async function startAIGame() {
     playerRole = 'p0';
-    gameId = 'local_ai'; // A unique ID to distinguish from database games
+    gameId = 'local_ai'; 
     
+    // Manually setting up the game object instead of fetching from Firebase
     gameData = {
         id: gameId,
         status: 'drafting',
-        isAI: true, // Crucial flag for branching logic
+        isAI: true, // This flag tells the rest of the code to stay local
         players: [
             { uid: currentUser.uid, name: "You", hand: [] },
             { uid: 'ai_bot', name: "Computer", hand: [] }
@@ -216,7 +217,8 @@ async function startAIGame() {
         battlefield: null,
         battleResults: null
     };
-    
+
+    // Trigger the UI to render the draft screen immediately
     processGameState();
 }
             
@@ -350,8 +352,8 @@ function runAILogic() {
         </div>
     `;
     document.getElementById('find-match-btn').onclick = startMatchmaking;
-    document.getElementById('play-ai-btn').onclick = startAIGame; // New Handler
-    statusText.innerText = "Select a game mode to begin.";
+    document.getElementById('play-ai-btn').onclick = startAIGame; // Link the function here
+    statusText.innerText = "Connect with a player or face the bot.";
 }
 
         function renderWaitingForOpponent() {
