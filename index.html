@@ -444,67 +444,85 @@ function updateBackgroundTheme() {
         };
 
         async function resolveBattle() {
-            const field = gameData.battlefield;
-            const card0 = gameData.activeCards[0];
-            const card1 = gameData.activeCards[1];
-            if (!card0 || !card1) return;
+    const field = gameData.battlefield;
+    const card0 = gameData.activeCards[0];
+    const card1 = gameData.activeCards[1];
+    if (!card0 || !card1) return;
 
-            let activeBattleAttrs = [...field.attrs];
-            let activations = ["", ""]; // Track special ability text per player
+    let activeBattleAttrs = [...field.attrs];
+    let activations = ["", ""]; 
+    let finalScores = [0, 0];
 
-            [card0, card1].forEach((card, i) => {
-                if (card.type === field.type && card.special === "Narrow It Down") {
-                    let weakest = activeBattleAttrs[0];
-                    activeBattleAttrs.forEach(a => { if (card.stats[a] < card.stats[weakest]) weakest = a; });
-                    activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakest);
-                    activations[i] = "Special Activated: Removed weakest attribute from scoring.";
-                }
+    // --- PHASE 1: FIELD MODIFICATION ---
+    [card0, card1].forEach((card, i) => {
+        const matching = (card.type === field.type || card.special === "Set My Own Rules");
+        if (matching && card.special === "Narrow It Down") {
+            let weakest = activeBattleAttrs[0];
+            activeBattleAttrs.forEach(a => { 
+                if (card.stats[a] < card.stats[weakest]) weakest = a; 
             });
-
-            let results = [{ score: 0 }, { score: 0 }];
-            activeBattleAttrs.forEach(attr => {
-                results[0].score += card0.stats[attr];
-                results[1].score += card1.stats[attr];
-            });
-
-            results.forEach((res, i) => {
-                const card = [card0, card1][i];
-                const oppCard = [card0, card1][1-i];
-                if (card.type === field.type) {
-                    if (card.special === "Underdog Mentality" && card.level < oppCard.level) { 
-                        res.score += 2; 
-                        activations[i] = "Special Activated: +2 Underdog Bonus vs higher level!";
-                    }
-                    if (card.special === "Battle Ready") { 
-                        res.score += activeBattleAttrs.length; 
-                        activations[i] = `Special Activated: +${activeBattleAttrs.length} Battle Ready Bonus!`;
-                    }
-                    if (card.special === "Reinforcements" || card.special === "Bonus Training") {
-                        res.score += 3;
-                        activations[i] = "Special Activated: +3 training bonus applied.";
-                    }
-                }
-            });
-
-            const winnerIdx = results[0].score >= results[1].score ? 0 : 1;
-            const loserIdx = 1 - winnerIdx;
-            const newPlayers = JSON.parse(JSON.stringify(gameData.players));
-            
-            newPlayers[winnerIdx].hand.push(gameData.activeCards[loserIdx]);
-            
-            let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
-
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                status: nextStatus,
-                players: newPlayers,
-                battleResults: {
-                    scores: [results[0].score, results[1].score],
-                    winnerIdx,
-                    attrs: activeBattleAttrs,
-                    activations: activations
-                }
-            });
+            activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakest);
+            activations[i] = "Special Activated: Removed weakest attribute!";
         }
+    });
+
+    // --- PHASE 2: SCORE & ALL 8 SPECIALS ---
+    [card0, card1].forEach((card, i) => {
+        const oppCard = i === 0 ? card1 : card0;
+        const myHand = gameData.players[i].hand.length;
+        const oppHand = gameData.players[1 - i].hand.length;
+        const matching = (card.type === field.type || card.special === "Set My Own Rules");
+
+        // Base Points
+        activeBattleAttrs.forEach(attr => { finalScores[i] += card.stats[attr]; });
+
+        // Special Bonuses (Only if type matches or "Set My Own Rules" is used)
+        if (matching) {
+            if (card.special === "Set My Own Rules" && card.type !== field.type) {
+                activations[i] = "Special Activated: Ignoring battlefield type!";
+            }
+            if (card.special === "Underdog Mentality" && card.level < oppCard.level) { 
+                finalScores[i] += 5; 
+                activations[i] = "Special Activated: +5 Underdog Bonus!";
+            }
+            if (card.special === "Battle Ready") { 
+                finalScores[i] += (activeBattleAttrs.length * 2); 
+                activations[i] = `Special Activated: +${activeBattleAttrs.length * 2} Preparedness Bonus!`;
+            }
+            if (card.special === "Reinforcements" || card.special === "Bonus Training") {
+                finalScores[i] += 4;
+                activations[i] = "Special Activated: +4 Training bonus!";
+            }
+            if (card.special === "Focused Training") {
+                finalScores[i] += 5;
+                activations[i] = "Special Activated: +5 Focused attribute bonus!";
+            }
+            if (card.special === "Rescue Mission" && myHand < oppHand) {
+                finalScores[i] += 6;
+                activations[i] = "Special Activated: +6 Rescue comeback bonus!";
+            }
+        }
+    });
+
+    // --- PHASE 3: SYNC TO CLOUD ---
+    const winnerIdx = finalScores[0] >= finalScores[1] ? 0 : 1;
+    const loserIdx = 1 - winnerIdx;
+    const newPlayers = JSON.parse(JSON.stringify(gameData.players));
+    newPlayers[winnerIdx].hand.push(gameData.activeCards[loserIdx]);
+    
+    let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
+
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+        status: nextStatus,
+        players: newPlayers,
+        battleResults: {
+            scores: finalScores,
+            winnerIdx,
+            attrs: activeBattleAttrs,
+            activations: activations // MUST INCLUDE THIS
+        }
+    });
+}
 
         function renderResultUI() {
     const res = gameData.battleResults;
@@ -513,7 +531,7 @@ function updateBackgroundTheme() {
     screen.innerHTML = `
         <div class="mb-6 text-center">
             <div class="inline-block px-4 py-2 bg-slate-800 rounded-lg border border-white/10">
-                <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest mb-1">Final Attributes Used</span>
+                <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest mb-1">Attributes Used</span>
                 <div class="flex justify-center gap-2">
                     ${res.attrs.map(a => `<span class="text-xs font-mono text-blue-300 capitalize">${a}</span>`).join(' • ')}
                 </div>
@@ -521,7 +539,8 @@ function updateBackgroundTheme() {
         </div>
 
         <div class="flex justify-between gap-6 mb-8 max-w-3xl mx-auto">
-            <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500 shadow-lg shadow-green-500/10' : 'border-red-900/30'}">
+            
+            <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500 shadow-lg' : 'border-red-900/30'}">
                 <img src="${gameData.activeCards[0].image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-3 border border-white/10">
                 <div class="text-center font-bold mb-1 opacity-80 text-[10px] uppercase tracking-tighter">${gameData.activeCards[0].name}</div>
                 <div class="text-4xl font-black text-center text-blue-400 mb-2">${res.scores[0]}</div>
@@ -531,11 +550,11 @@ function updateBackgroundTheme() {
                         ✨ ${res.activations[0]}
                     </div>
                 ` : ''}
-            </div>
+                </div>
 
             <div class="flex items-center text-2xl font-black italic text-slate-700">VS</div>
 
-            <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500 shadow-lg shadow-green-500/10' : 'border-red-900/30'}">
+            <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500 shadow-lg' : 'border-red-900/30'}">
                 <img src="${gameData.activeCards[1].image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-3 border border-white/10">
                 <div class="text-center font-bold mb-1 opacity-80 text-[10px] uppercase tracking-tighter">${gameData.activeCards[1].name}</div>
                 <div class="text-4xl font-black text-center text-purple-400 mb-2">${res.scores[1]}</div>
@@ -545,12 +564,12 @@ function updateBackgroundTheme() {
                         ✨ ${res.activations[1]}
                     </div>
                 ` : ''}
-            </div>
+                </div>
         </div>
         
         <div class="text-center">
             <div class="text-3xl font-black mb-4">Player ${res.winnerIdx + 1} Wins!</div>
-            ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold shadow-lg hover:bg-blue-500 transition-all active:scale-95">Next Battlefield</button>` : `<p class="animate-pulse text-slate-500">Awaiting host to choose next battlefield...</p>`}
+            ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold shadow-lg hover:bg-blue-500 transition-all active:scale-95">Next Battlefield</button>` : `<p class="animate-pulse text-slate-500 text-sm">Waiting for Host to pick next field...</p>`}
         </div>
     `;
 }
