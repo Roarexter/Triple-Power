@@ -145,7 +145,7 @@ const CARDS_DATA = [
             if (user) {
                 currentUser = user;
                 userInfo.innerText = `Logged in as: ${user.uid}`;
-                Menu();
+                renderMainMenu();
             }
         });
 
@@ -197,30 +197,7 @@ function updateBackgroundTheme() {
                 </div>
             `;
 
-async function startAIGame() {
-    playerRole = 'p0';
-    gameId = 'local_ai'; 
-    
-    gameData = {
-        id: gameId,
-        status: 'drafting',
-        isAI: true, // Flag to keep logic local
-        players: [
-            { uid: currentUser.uid, name: "You", hand: [] },
-            { uid: 'ai_bot', name: "Computer", hand: [] }
-        ],
-        pool: [...CARDS_DATA].sort(() => Math.random() - 0.5),
-        draftOrder: [0, 1, 1, 0, 0, 1, 1, 0],
-        draftStep: 0,
-        activeCards: [null, null],
-        battlefield: null,
-        battleResults: null
-    };
-
-    processGameState();
-}
-            
-            document.getElementById('cancel-match').onclick = () => Menu();
+            document.getElementById('cancel-match').onclick = () => renderMainMenu();
 
             const lobbyRef = doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game');
             const lobbiesSnap = await getDoc(lobbyRef);
@@ -275,75 +252,40 @@ async function startAIGame() {
         }
 
         // --- GAME LOGIC ENGINE ---
-
-function runAILogic() {
-    if (!gameData.isAI || gameData.status === 'finished') return;
-
-    // AI Drafting: If it's the computer's turn (p1)
-    if (gameData.status === 'drafting') {
-        const pIndex = gameData.draftOrder[gameData.draftStep];
-        if (pIndex === 1) { 
-            setTimeout(() => pickCard(0), 1000); // Wait 1s then pick first available card
-        }
-    }
-
-    // AI Battle: If computer hasn't picked a card yet
-    if (gameData.status === 'battle_selection') {
-        if (gameData.activeCards[1] === null) {
-            setTimeout(() => {
-                const aiHand = gameData.players[1].hand;
-                if (aiHand.length > 0) {
-                    // Simple AI: Picks the first card in its hand
-                    selectCardForBattle(0);
-                }
-            }, 1500);
-        }
-    }
-}
-        
         function processGameState() {
+    // Add this line here
     updateBackgroundTheme(); 
 
-    // Trigger AI if applicable
-    if (gameData.isAI) runAILogic(); 
-
-    // Don't show "Waiting for Opponent" if playing against AI
-    if (gameData.status === 'drafting' && !gameData.players[1].uid && !gameData.isAI) {
+    if (gameData.status === 'drafting' && !gameData.players[1].uid) {
         renderWaitingForOpponent();
         return;
     }
 
-    if (gameData.status === 'drafting') {
-        renderDraft();
-    } else if (gameData.status === 'battle_selection') {
-        renderBattleSelection();
-    } else if (gameData.status === 'battle_result') {
-        renderResultUI();
-    } else if (gameData.status === 'finished') {
-        renderEndGame();
-    }
-}
+            if (gameData.status === 'drafting') {
+                renderDraft();
+            } else if (gameData.status === 'battle_selection') {
+                renderBattleSelection();
+            } else if (gameData.status === 'battle_result') {
+                renderResultUI();
+            } else if (gameData.status === 'finished') {
+                renderEndGame();
+            }
+        }
 
         function renderMainMenu() {
-    screen.innerHTML = `
-        <div class="text-center py-12">
-            <div class="bg-slate-800 p-10 rounded-3xl border border-white/10 shadow-2xl">
-                <h2 class="text-2xl font-bold mb-6">Ready for Battle?</h2>
-                <div class="flex flex-col gap-4">
-                    <button id="find-match-btn" class="px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full font-black text-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20">
-                        FIND ONLINE MATCH
-                    </button>
-                    <button id="play-ai-btn" class="px-12 py-4 bg-slate-700 hover:bg-slate-600 rounded-full font-bold text-lg transition-all active:scale-95">
-                        PLAY COMPUTER
-                    </button>
+            screen.innerHTML = `
+                <div class="text-center py-12">
+                    <div class="bg-slate-800 p-10 rounded-3xl border border-white/10 shadow-2xl">
+                        <h2 class="text-2xl font-bold mb-6">Ready for Battle?</h2>
+                        <button id="find-match-btn" class="px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full font-black text-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+                            FIND ONLINE MATCH
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </div>
-    `;
-    document.getElementById('find-match-btn').onclick = startMatchmaking;
-    document.getElementById('play-ai-btn').onclick = startAIGame; // This fixes the "not defined" error
-    statusText.innerText = "Select a mode to begin.";
-}
+            `;
+            document.getElementById('find-match-btn').onclick = startMatchmaking;
+            statusText.innerText = "Connect with a player to begin.";
+        }
 
         function renderWaitingForOpponent() {
             statusText.innerText = "WAITING FOR OPPONENT";
@@ -402,45 +344,32 @@ function runAILogic() {
         }
 
         window.pickCard = async (idx) => {
-    const pIdx = gameData.draftOrder[gameData.draftStep];
-    const card = gameData.pool[idx];
-    
-    const newPool = [...gameData.pool];
-    newPool.splice(idx, 1);
-    
-    const newPlayers = [...gameData.players];
-    newPlayers[pIdx].hand.push(card);
+            const pIdx = gameData.draftOrder[gameData.draftStep];
+            const card = gameData.pool[idx];
+            
+            const newPool = [...gameData.pool];
+            newPool.splice(idx, 1);
+            
+            const newPlayers = [...gameData.players];
+            newPlayers[pIdx].hand.push(card);
 
-    const nextStep = gameData.draftStep + 1;
-    let nextStatus = 'drafting';
-    let nextBattlefield = null;
+            const nextStep = gameData.draftStep + 1;
+            let nextStatus = 'drafting';
+            let nextBattlefield = null;
 
-    if (nextStep >= gameData.draftOrder.length) {
-        nextStatus = 'battle_selection';
-        nextBattlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
-    }
+            if (nextStep >= gameData.draftOrder.length) {
+                nextStatus = 'battle_selection';
+                nextBattlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
+            }
 
-    // --- INTEGRATION POINT ---
-    if (gameData.isAI) {
-        // Local state update
-        gameData.pool = newPool;
-        gameData.players = newPlayers;
-        gameData.draftStep = nextStep;
-        gameData.status = nextStatus;
-        gameData.battlefield = nextBattlefield;
-        // Manually trigger UI update
-        processGameState(); 
-    } else {
-        // Online Firestore update
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-            pool: newPool,
-            players: newPlayers,
-            draftStep: nextStep,
-            status: nextStatus,
-            battlefield: nextBattlefield
-        });
-    }
-};
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+                pool: newPool,
+                players: newPlayers,
+                draftStep: nextStep,
+                status: nextStatus,
+                battlefield: nextBattlefield
+            });
+        };
 
         function renderBattleSelection() {
             const myIdx = playerRole === 'p0' ? 0 : 1;
@@ -498,34 +427,21 @@ function runAILogic() {
         }
 
         window.selectCardForBattle = async (cardIdx) => {
-    const myIdx = playerRole === 'p0' ? 0 : 1;
-    const myHand = [...gameData.players[myIdx].hand];
-    const selected = myHand.splice(cardIdx, 1)[0];
-    
-    const playersUpdate = [...gameData.players];
-    playersUpdate[myIdx].hand = myHand;
-    
-    const activeUpdate = [...gameData.activeCards];
-    activeUpdate[myIdx] = selected;
+            const myIdx = playerRole === 'p0' ? 0 : 1;
+            const myHand = [...gameData.players[myIdx].hand];
+            const selected = myHand.splice(cardIdx, 1)[0];
+            
+            const playersUpdate = [...gameData.players];
+            playersUpdate[myIdx].hand = myHand;
+            
+            const activeUpdate = [...gameData.activeCards];
+            activeUpdate[myIdx] = selected;
 
-    // --- INTEGRATION POINT ---
-    if (gameData.isAI) {
-        gameData.players = playersUpdate;
-        gameData.activeCards = activeUpdate;
-        
-        // If both cards are now selected in AI mode, resolve the battle
-        if (gameData.activeCards[0] && gameData.activeCards[1]) {
-            resolveBattle(); 
-        } else {
-            processGameState();
-        }
-    } else {
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-            players: playersUpdate,
-            activeCards: activeUpdate
-        });
-    }
-};
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+                players: playersUpdate,
+                activeCards: activeUpdate
+            });
+        };
 
         async function resolveBattle() {
     // 1. Safety Check: Ensure game data is loaded
@@ -652,36 +568,21 @@ function runAILogic() {
 
     let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
 
-    if (gameData.isAI) {
-        // Update local state directly
-        gameData.status = nextStatus;
-        gameData.players = newPlayers;
-        gameData.battleResults = {
-            scores: finalScores,
-            winnerIdx,
-            attrs: activeBattleAttrs,
-            activations: activations
-        };
-        // In AI mode, we must manually trigger the next UI render
-        processGameState();
-    } else {
-        // Standard Online Firebase Logic
-        try {
-            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
-            await updateDoc(gameRef, {
-                status: nextStatus,
-                players: newPlayers,
-                battleResults: {
-                    scores: finalScores,
-                    winnerIdx,
-                    attrs: activeBattleAttrs,
-                    activations: activations
-                }
-            });
-        } catch (err) {
-            console.error("Firebase Update Error:", err);
-            alert("Connection failed. Check your internet or Firebase rules.");
-        }
+    try {
+        const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+        await updateDoc(gameRef, {
+            status: nextStatus,
+            players: newPlayers,
+            battleResults: {
+                scores: finalScores,
+                winnerIdx,
+                attrs: activeBattleAttrs,
+                activations: activations
+            }
+        });
+    } catch (err) {
+        console.error("Firebase Update Error:", err);
+        alert("Connection failed. Check your internet or Firebase rules.");
     }
 }
 
@@ -736,28 +637,17 @@ function runAILogic() {
 }
 
         window.nextRound = async () => {
-    const winnerIdx = gameData.battleResults.winnerIdx;
-    const newActive = [null, null];
-    newActive[winnerIdx] = gameData.activeCards[winnerIdx];
-    const nextField = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
+            const winnerIdx = gameData.battleResults.winnerIdx;
+            const newActive = [null, null];
+            newActive[winnerIdx] = gameData.activeCards[winnerIdx];
 
-    if (gameData.isAI) {
-        // Local Update
-        gameData.status = 'battle_selection';
-        gameData.activeCards = newActive;
-        gameData.battlefield = nextField;
-        gameData.battleResults = null;
-        processGameState();
-    } else {
-        // Online Update
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-            status: 'battle_selection',
-            activeCards: newActive,
-            battlefield: nextField,
-            battleResults: null
-        });
-    }
-};
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+                status: 'battle_selection',
+                activeCards: newActive,
+                battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)],
+                battleResults: null
+            });
+        };
 
         function renderEndGame() {
             const winnerIdx = gameData.battleResults.winnerIdx;
