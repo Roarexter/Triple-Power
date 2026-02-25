@@ -725,18 +725,16 @@ async function triggerCPUMove() {
 }
 
         window.nextRound = async () => {
-    const winnerIdx = gameData.battleResults.winnerIdx;
-    const currentWinningCard = gameData.activeCards[winnerIdx]; // Renamed for safety
+    // Reset both active card slots to null
+    gameData.activeCards = [null, null]; 
     
-    gameData.activeCards = [null, null];
-    gameData.activeCards[winnerIdx] = currentWinningCard; 
-    
+    // Select a new battlefield
     gameData.status = 'battle_selection';
     gameData.battlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
     gameData.battleResults = null;
 
     if (isSinglePlayer) {
-        processGameState(); //
+        processGameState(); 
     } else {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: gameData.status,
