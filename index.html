@@ -281,28 +281,29 @@ function updateBackgroundTheme() {
 
 // --- AI BRAIN LOGIC ---
 async function triggerCPUMove() {
-    // Only run if single-player is active and game isn't over
     if (!isSinglePlayer || gameData.status === 'finished') return;
 
-    // Simulate "thinking" time
     setTimeout(async () => {
         if (gameData.status === 'drafting') {
             const pIdx = gameData.draftOrder[gameData.draftStep];
-            // Only move if it's the CPU's turn (Player Index 1)
             if (pIdx === 1) { 
                 const randomIdx = Math.floor(Math.random() * gameData.pool.length);
                 await pickCard(randomIdx); 
             }
         } 
         else if (gameData.status === 'battle_selection') {
-            // Only move if CPU hasn't picked a card yet
+            // Check if CPU (Index 1) needs to play
             if (gameData.activeCards[1] === null) {
                 const cpuHand = gameData.players[1].hand;
-                const randomIdx = Math.floor(Math.random() * cpuHand.length);
-                await selectCardForBattle(randomIdx);
+                if (cpuHand.length > 0) {
+                    // AI selects a random card index from its actual hand
+                    const randomIdx = Math.floor(Math.random() * cpuHand.length);
+                    // This call MUST remove the card from the hand array
+                    await selectCardForBattle(randomIdx);
+                }
             }
         }
-    }, 1200); // 1.2 second delay for realism
+    }, 1200);
 }
         
         function processGameState() {
@@ -489,19 +490,28 @@ async function triggerCPUMove() {
         }
 
         window.selectCardForBattle = async (cardIdx) => {
-    const myIdx = (isSinglePlayer && gameData.status === 'battle_selection' && gameData.activeCards[0] !== null) ? 1 : (playerRole === 'p0' ? 0 : 1);
+    // Determine who is moving: 
+    // If it's single player and the player already has a card, it's the CPU's turn.
+    let movingIdx;
+    if (isSinglePlayer) {
+        movingIdx = (gameData.activeCards[0] === null) ? 0 : 1;
+    } else {
+        movingIdx = (playerRole === 'p0' ? 0 : 1);
+    }
     
-    const myHand = [...gameData.players[myIdx].hand];
-    const selected = myHand.splice(cardIdx, 1)[0];
+    // Get the hand and remove the card
+    const currentHand = [...gameData.players[movingIdx].hand];
+    const selectedCard = currentHand.splice(cardIdx, 1)[0];
     
-    gameData.players[myIdx].hand = myHand;
-    gameData.activeCards[myIdx] = selected;
+    // Update the local object
+    gameData.players[movingIdx].hand = currentHand;
+    gameData.activeCards[movingIdx] = selectedCard;
 
     if (isSinglePlayer) {
         processGameState();
-        // Trigger battle resolution immediately if both cards are now selected
+        // Resolve immediately if both have cards
         if (gameData.activeCards[0] && gameData.activeCards[1]) {
-            resolveBattle();
+            setTimeout(() => resolveBattle(), 500);
         }
     } else {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
@@ -609,31 +619,32 @@ async function triggerCPUMove() {
         }
     });
 
-    // --- PHASE 3: UPDATING STATE ---
+    // --- PHASE 3: UPDATING STATE & CARD TRANSFERS ---
     const winnerIdx = finalScores[0] >= finalScores[1] ? 0 : 1;
     const loserIdx = 1 - winnerIdx;
     
+    // Create a safe copy of players to modify hands
     let newPlayers = gameData.players.map(p => ({
         ...p,
-        hand: Array.isArray(p.hand) ? [...p.hand] : []
+        hand: [...p.hand]
     }));
 
-    const cardWon = gameData.activeCards[loserIdx];
-    newPlayers[winnerIdx].hand.push(cardWon);
+    // Transfer the card: Winner captures the card the loser played
+    const cardCaptured = gameData.activeCards[loserIdx];
+    newPlayers[winnerIdx].hand.push(cardCaptured);
 
-    // Rescue Mission Check
-    [0, 1].forEach(i => {
-        if (activations[i] && activations[i].includes("RESCUE")) {
-            const oppIdx = 1 - i;
-            if (newPlayers[oppIdx].hand.length > 1) { 
-                const regainedCard = newPlayers[oppIdx].hand.pop();
-                newPlayers[i].hand.push(regainedCard);
-            }
+    // Handle "Rescue Mission" ability for single-player
+    if (activations[winnerIdx] && activations[winnerIdx].includes("RESCUE")) {
+        if (newPlayers[loserIdx].hand.length > 0) {
+            const rescuedCard = newPlayers[loserIdx].hand.pop();
+            newPlayers[winnerIdx].hand.push(rescuedCard);
         }
-    });
+    }
 
+    // Check for Game Over: If loser has 0 cards left, status is 'finished'
     let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
-
+    
+    // Prepare the update package
     const resultsData = {
         status: nextStatus,
         players: newPlayers,
@@ -646,13 +657,14 @@ async function triggerCPUMove() {
     };
 
     if (isSinglePlayer) {
-        // Explicitly update the local state for card transfers
+        // Apply changes directly to local state
         gameData.status = resultsData.status;
-        gameData.players = resultsData.players; 
+        gameData.players = resultsData.players;
         gameData.battleResults = resultsData.battleResults;
         
         processGameState();
     } else {
+        // Multiplayer: Sync to Firebase
         try {
             const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
             await updateDoc(gameRef, resultsData);
@@ -660,7 +672,7 @@ async function triggerCPUMove() {
             console.error("Firebase Update Error:", err);
         }
     }
-} // Ensure this closing brace for the function is present
+}
 
         function renderResultUI() {
     const res = gameData.battleResults;
