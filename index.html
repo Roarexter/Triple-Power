@@ -725,21 +725,22 @@ async function triggerCPUMove() {
 }
 
         window.nextRound = async () => {
-    // FIX: Clear BOTH slots. 
-    // In resolveBattle, the winner already got their card back (and the loser's card).
-    // Keeping a card in activeCards here causes the "double" card bug.
-    gameData.activeCards = [null, null]; 
+    const winnerIdx = gameData.battleResults.winnerIdx;
+    const currentWinningCard = gameData.activeCards[winnerIdx]; // Renamed for safety
+    
+    gameData.activeCards = [null, null];
+    gameData.activeCards[winnerIdx] = currentWinningCard; 
     
     gameData.status = 'battle_selection';
     gameData.battlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
     gameData.battleResults = null;
 
     if (isSinglePlayer) {
-        processGameState(); 
+        processGameState(); //
     } else {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: gameData.status,
-            activeCards: gameData.activeCards, // Now correctly sends [null, null]
+            activeCards: gameData.activeCards,
             battlefield: gameData.battlefield,
             battleResults: null
         });
