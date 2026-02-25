@@ -633,11 +633,10 @@ async function triggerCPUMove() {
     });
 
     let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
-    
-    // NEW CONDITIONAL LOGIC STARTS HERE
+
     const resultsData = {
         status: nextStatus,
-        players: newPlayers, // This contains the updated hands
+        players: newPlayers,
         battleResults: {
             scores: finalScores,
             winnerIdx,
@@ -647,14 +646,13 @@ async function triggerCPUMove() {
     };
 
     if (isSinglePlayer) {
-        // Explicitly update the local gameData object
+        // Explicitly update the local state for card transfers
         gameData.status = resultsData.status;
-        gameData.players = resultsData.players; // CRITICAL: Update the hands
+        gameData.players = resultsData.players; 
         gameData.battleResults = resultsData.battleResults;
         
         processGameState();
     } else {
-        // Original Firebase Update
         try {
             const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
             await updateDoc(gameRef, resultsData);
@@ -662,6 +660,7 @@ async function triggerCPUMove() {
             console.error("Firebase Update Error:", err);
         }
     }
+} // Ensure this closing brace for the function is present
 
         function renderResultUI() {
     const res = gameData.battleResults;
@@ -715,18 +714,17 @@ async function triggerCPUMove() {
 
         window.nextRound = async () => {
     const winnerIdx = gameData.battleResults.winnerIdx;
-    const winningCard = gameData.activeCards[winnerIdx]; 
+    const currentWinningCard = gameData.activeCards[winnerIdx]; // Renamed for safety
     
-    // Reset active cards but keep the winner's card
     gameData.activeCards = [null, null];
-    gameData.activeCards[winnerIdx] = winningCard; 
+    gameData.activeCards[winnerIdx] = currentWinningCard; 
     
     gameData.status = 'battle_selection';
     gameData.battlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
     gameData.battleResults = null;
 
     if (isSinglePlayer) {
-        processGameState();
+        processGameState(); //
     } else {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: gameData.status,
