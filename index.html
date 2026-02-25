@@ -620,26 +620,27 @@ async function triggerCPUMove() {
     });
 
     // --- PHASE 3: UPDATING STATE & CARD TRANSFERS ---
-    const winnerIdx = finalScores[0] >= finalScores[1] ? 0 : 1;
-    const loserIdx = 1 - winnerIdx;
-    
-    // Create a safe copy of players to modify hands
-    let newPlayers = gameData.players.map(p => ({
-        ...p,
-        hand: [...p.hand]
-    }));
+const winnerIdx = finalScores[0] >= finalScores[1] ? 0 : 1;
+const loserIdx = 1 - winnerIdx;
 
-    // Transfer the card: Winner captures the card the loser played
-    const cardCaptured = gameData.activeCards[loserIdx];
-    newPlayers[winnerIdx].hand.push(cardCaptured);
+// 1. Capture the card from the field
+const cardCaptured = gameData.activeCards[loserIdx];
 
-    // Handle "Rescue Mission" ability for single-player
-    if (activations[winnerIdx] && activations[winnerIdx].includes("RESCUE")) {
-        if (newPlayers[loserIdx].hand.length > 0) {
-            const rescuedCard = newPlayers[loserIdx].hand.pop();
-            newPlayers[winnerIdx].hand.push(rescuedCard);
-        }
+// 2. CRITICAL: Immediately nullify the field so this block can't run twice
+gameData.activeCards[loserIdx] = null; 
+
+if (cardCaptured) {
+    // Only add the card if we actually found one to capture
+    gameData.players[winnerIdx].hand.push(cardCaptured);
+}
+
+// 3. Handle Rescue Mission (ensure this only happens once)
+if (activations[winnerIdx] && activations[winnerIdx].includes("RESCUE")) {
+    if (gameData.players[loserIdx].hand.length > 0) {
+        const rescuedCard = gameData.players[loserIdx].hand.pop();
+        gameData.players[winnerIdx].hand.push(rescuedCard);
     }
+}
 
     // Check for Game Over: If loser has 0 cards left, status is 'finished'
     let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
