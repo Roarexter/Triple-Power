@@ -637,7 +637,7 @@ async function triggerCPUMove() {
     // NEW CONDITIONAL LOGIC STARTS HERE
     const resultsData = {
         status: nextStatus,
-        players: newPlayers,
+        players: newPlayers, // This contains the updated hands
         battleResults: {
             scores: finalScores,
             winnerIdx,
@@ -647,8 +647,11 @@ async function triggerCPUMove() {
     };
 
     if (isSinglePlayer) {
-        // Update local memory and refresh UI immediately
-        Object.assign(gameData, resultsData);
+        // Explicitly update the local gameData object
+        gameData.status = resultsData.status;
+        gameData.players = resultsData.players; // CRITICAL: Update the hands
+        gameData.battleResults = resultsData.battleResults;
+        
         processGameState();
     } else {
         // Original Firebase Update
@@ -657,10 +660,8 @@ async function triggerCPUMove() {
             await updateDoc(gameRef, resultsData);
         } catch (err) {
             console.error("Firebase Update Error:", err);
-            alert("Connection failed.");
         }
     }
-}
 
         function renderResultUI() {
     const res = gameData.battleResults;
@@ -714,10 +715,11 @@ async function triggerCPUMove() {
 
         window.nextRound = async () => {
     const winnerIdx = gameData.battleResults.winnerIdx;
-    const winningCard = gameData.activeCards[winnerIdx]; // Save the card first
+    const winningCard = gameData.activeCards[winnerIdx]; 
     
+    // Reset active cards but keep the winner's card
     gameData.activeCards = [null, null];
-    gameData.activeCards[winnerIdx] = winningCard; // Now re-assign it
+    gameData.activeCards[winnerIdx] = winningCard; 
     
     gameData.status = 'battle_selection';
     gameData.battlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
