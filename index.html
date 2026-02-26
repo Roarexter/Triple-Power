@@ -62,7 +62,6 @@
         </header>
 
         <div id="game-screen">
-            <!-- Dynamic Content -->
             <div class="flex flex-col items-center justify-center py-20">
                 <div class="spinner mb-4"></div>
                 <p>Establishing secure connection...</p>
@@ -75,23 +74,22 @@
         <div id="game-log"></div>
     </div>
 
-    <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection, query, where, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global Game Configuration
-const CARDS_DATA = [
-    { id: 'c1', name: "Ground Graveler", image: "GroundGraveler.jpeg", type: "Nature", level: 1, special: "Focused Training", stats: { strength: 5, speed: 15, agility: 14, health: 7, intelligence: 6, creativity: 13, accuracy: 10, stamina: 12, skill: 8, strategy: 10 } },
-    { id: 'c2', name: "Tiny", image: "Tiny.jpeg", type: "Nature", level: 1, special: "Underdog Mentality", stats: { strength: 6, speed: 16, agility: 19, health: 7, intelligence: 9, creativity: 12, accuracy: 8, stamina: 10, skill: 8, strategy: 5 } },
-    { id: 'c3', name: "Vine Thrasher", image: "VineThrasher.jpeg", type: "Nature", level: 2, special: "Set My Own Rules", stats: { strength: 16, speed: 7, agility: 11, health: 8, intelligence: 12, creativity: 11, accuracy: 4, stamina: 9, skill: 14, strategy: 13 } },
-    { id: 'c4', name: "Bush Beast", image: "BushBeast.jpeg", type: "Nature", level: 2, special: "Reinforcements", stats: { strength: 7, speed: 16, agility: 13, health: 4, intelligence: 6, creativity: 14, accuracy: 12, stamina: 8, skill: 7, strategy: 18 } },
-    { id: 'c5', name: "Villager", image: "Villager.jpeg", type: "Village", level: 1, special: "Battle Ready", stats: { strength: 7, speed: 12, agility: 11, health: 15, intelligence: 11, creativity: 9, accuracy: 10, stamina: 13, skill: 7, strategy: 5 } },
-    { id: 'c6', name: "Realo", image: "Realo.jpeg", type: "Village", level: 1, special: "Rescue Mission", stats: { strength: 10, speed: 9, agility: 9, health: 8, intelligence: 13, creativity: 13, accuracy: 8, stamina: 11, skill: 8, strategy: 11 } },
-    { id: 'c7', name: "Warrior", image: "Warrior.jpeg", type: "Village", level: 2, special: "Bonus Training", stats: { strength: 18, speed: 13, agility: 8, health: 8, intelligence: 5, creativity: 7, accuracy: 12, stamina: 13, skill: 12, strategy: 9 } },
-    { id: 'c8', name: "Target Shielder", image: "TargetShielder.jpeg", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } }
-];
+        // Card and Battlefield Definitions
+        const CARDS_DATA = [
+            { id: 'c1', name: "Ground Graveler", image: "GroundGraveler.jpeg", type: "Nature", level: 1, special: "Focused Training", stats: { strength: 5, speed: 15, agility: 14, health: 7, intelligence: 6, creativity: 13, accuracy: 10, stamina: 12, skill: 8, strategy: 10 } },
+            { id: 'c2', name: "Tiny", image: "Tiny.jpeg", type: "Nature", level: 1, special: "Underdog Mentality", stats: { strength: 6, speed: 16, agility: 19, health: 7, intelligence: 9, creativity: 12, accuracy: 8, stamina: 10, skill: 8, strategy: 5 } },
+            { id: 'c3', name: "Vine Thrasher", image: "VineThrasher.jpeg", type: "Nature", level: 2, special: "Set My Own Rules", stats: { strength: 16, speed: 7, agility: 11, health: 8, intelligence: 12, creativity: 11, accuracy: 4, stamina: 9, skill: 14, strategy: 13 } },
+            { id: 'c4', name: "Bush Beast", image: "BushBeast.jpeg", type: "Nature", level: 2, special: "Reinforcements", stats: { strength: 7, speed: 16, agility: 13, health: 4, intelligence: 6, creativity: 14, accuracy: 12, stamina: 8, skill: 7, strategy: 18 } },
+            { id: 'c5', name: "Villager", image: "Villager.jpeg", type: "Village", level: 1, special: "Battle Ready", stats: { strength: 7, speed: 12, agility: 11, health: 15, intelligence: 11, creativity: 9, accuracy: 10, stamina: 13, skill: 7, strategy: 5 } },
+            { id: 'c6', name: "Realo", image: "Realo.jpeg", type: "Village", level: 1, special: "Rescue Mission", stats: { strength: 10, speed: 9, agility: 9, health: 8, intelligence: 13, creativity: 13, accuracy: 8, stamina: 11, skill: 8, strategy: 11 } },
+            { id: 'c7', name: "Warrior", image: "Warrior.jpeg", type: "Village", level: 2, special: "Bonus Training", stats: { strength: 18, speed: 13, agility: 8, health: 8, intelligence: 5, creativity: 7, accuracy: 12, stamina: 13, skill: 12, strategy: 9 } },
+            { id: 'c8', name: "Target Shielder", image: "TargetShielder.jpeg", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } }
+        ];
 
         const BATTLEFIELDS = [
             { name: "Jungle Fortress", type: "Nature", attrs: ["agility", "skill", "creativity"] },
@@ -100,34 +98,23 @@ const CARDS_DATA = [
             { name: "Town Center", type: "Village", attrs: ["strength", "health", "speed"] }
         ];
 
-        // Firebase Configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI",
-            authDomain: "triplepower-8dca6.firebaseapp.com",
-            projectId: "triplepower-8dca6",
-            storageBucket: "triplepower-8dca6.firebasestorage.app",
-            messagingSenderId: "73414403539",
-            appId: "1:73414403539:web:d54faef95d2709a78e3b26"
-        };
-
+        const firebaseConfig = JSON.parse('{"apiKey":"AIzaSyC7J4szfCMOiVMl7P8kiy2XqE_bYlQvMoI","authDomain":"triplepower-8dca6.firebaseapp.com","projectId":"triplepower-8dca6","storageBucket":"triplepower-8dca6.firebasestorage.app","messagingSenderId":"73414403539","appId":"1:73414403539:web:d54faef95d2709a78e3b26"}');
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'triplepower-default';
 
-        // Local State
         let currentUser = null;
         let gameId = null;
         let gameData = null;
-        let playerRole = null; // 'p0' or 'p1'
+        let playerRole = null; 
+        let isSinglePlayer = false;
 
         const screen = document.getElementById('game-screen');
         const statusText = document.getElementById('game-status');
         const userInfo = document.getElementById('user-info');
-        const gameLog = document.getElementById('game-log');
-        const logContainer = document.getElementById('log-container');
 
-        // --- AUTHENTICATION ---
+        // --- AUTH ---
         const initAuth = async () => {
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -137,7 +124,7 @@ const CARDS_DATA = [
                 }
             } catch (err) {
                 console.error("Auth error", err);
-                statusText.innerText = "Connection failed. Please refresh.";
+                statusText.innerText = "Connection failed.";
             }
         };
 
@@ -149,7 +136,76 @@ const CARDS_DATA = [
             }
         });
 
-        // --- UI UTILS ---
+        // --- SINGLE PLAYER LOGIC ---
+        window.startSinglePlayer = () => {
+            isSinglePlayer = true;
+            playerRole = 'p0';
+            gameId = 'local_' + Date.now();
+            
+            gameData = {
+                id: gameId,
+                status: 'drafting',
+                players: [
+                    { uid: currentUser.uid, name: "You", hand: [] },
+                    { uid: 'cpu', name: "Computer", hand: [] }
+                ],
+                pool: [...CARDS_DATA].sort(() => Math.random() - 0.5),
+                draftOrder: [0, 1, 1, 0, 0, 1, 1, 0],
+                draftStep: 0,
+                activeCards: [null, null],
+                battlefield: null,
+                battleResults: null
+            };
+
+            processGameState();
+        };
+
+        async function triggerCPUMove() {
+            if (!isSinglePlayer || gameData.status === 'finished') return;
+
+            // Short delay to simulate AI thinking
+            setTimeout(async () => {
+                if (gameData.status === 'drafting') {
+                    const pIdx = gameData.draftOrder[gameData.draftStep];
+                    if (pIdx === 1) { 
+                        // AI simply picks a card from the pool
+                        const randomIdx = Math.floor(Math.random() * gameData.pool.length);
+                        await window.pickCard(randomIdx); 
+                    }
+                } 
+                else if (gameData.status === 'battle_selection') {
+                    if (gameData.activeCards[1] === null) {
+                        const cpuHand = gameData.players[1].hand;
+                        if (cpuHand.length > 0) {
+                            // AI picks its best card (simplified: picks random from hand)
+                            const randomIdx = Math.floor(Math.random() * cpuHand.length);
+                            await window.selectCardForBattle(randomIdx);
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        // --- UI RENDERING ---
+        function renderMainMenu() {
+            screen.innerHTML = `
+                <div class="text-center py-12">
+                    <div class="bg-slate-800 p-10 rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-4">
+                        <h2 class="text-2xl font-bold mb-2">Ready for Battle?</h2>
+                        <button id="find-match-btn" class="px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full font-black text-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+                            FIND ONLINE MATCH
+                        </button>
+                        <button id="play-cpu-btn" class="px-12 py-4 bg-slate-700 hover:bg-slate-600 rounded-full font-bold text-lg transition-all active:scale-95 border border-white/5">
+                            PLAY VS COMPUTER
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('find-match-btn').onclick = startMatchmaking;
+            document.getElementById('play-cpu-btn').onclick = window.startSinglePlayer;
+            statusText.innerText = "Select a game mode to begin.";
+        }
+
         function createStatsHTML(stats) {
             return `
                 <div class="stats-tooltip">
@@ -164,40 +220,23 @@ const CARDS_DATA = [
             `;
         }
 
-function updateBackgroundTheme() {
-    if (!gameData || !gameData.battlefield) {
-        document.body.style.background = "#0f172a"; // Default dark blue
-        return;
-    }
+        function updateBackgroundTheme() {
+            if (!gameData || !gameData.battlefield) {
+                document.body.style.background = "#0f172a";
+                return;
+            }
+            const type = gameData.battlefield.type;
+            document.body.style.background = type === "Nature" 
+                ? "linear-gradient(to bottom, #064e3b, #0f172a)" 
+                : "linear-gradient(to bottom, #451a03, #0f172a)";
+            document.body.style.transition = "background 1s ease";
+        }
 
-    const type = gameData.battlefield.type;
-    
-    if (type === "Nature") {
-        // A deep forest green gradient
-        document.body.style.background = "linear-gradient(to bottom, #064e3b, #0f172a)";
-    } else if (type === "Village") {
-        // A warm sunset/terracotta gradient
-        document.body.style.background = "linear-gradient(to bottom, #451a03, #0f172a)";
-    } else {
-        document.body.style.background = "#0f172a";
-    }
-    
-    // Smooth transition effect
-    document.body.style.transition = "background 1s ease";
-}
-        
         // --- MATCHMAKING ---
         async function startMatchmaking() {
+            isSinglePlayer = false;
             statusText.innerText = "Searching for an opponent...";
-            screen.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-20">
-                    <div class="spinner mb-6"></div>
-                    <p class="text-xl font-bold animate-pulse">Searching for match...</p>
-                    <button id="cancel-match" class="mt-8 text-slate-500 hover:text-white underline text-sm">Cancel</button>
-                </div>
-            `;
-
-            document.getElementById('cancel-match').onclick = () => renderMainMenu();
+            screen.innerHTML = `<div class="flex flex-col items-center justify-center py-20"><div class="spinner mb-6"></div><p class="text-xl font-bold animate-pulse">Searching...</p></div>`;
 
             const lobbyRef = doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game');
             const lobbiesSnap = await getDoc(lobbyRef);
@@ -207,15 +246,13 @@ function updateBackgroundTheme() {
                 gameId = lobbyData.gameId;
                 playerRole = 'p1';
                 await updateDoc(lobbyRef, { status: 'filled' });
-                await joinGame(gameId);
+                joinGame(gameId);
             } else {
-                gameId = `game_${Date.now()}_${currentUser.uid}`;
+                gameId = `game_${Date.now()}`;
                 playerRole = 'p0';
-
                 const newGame = {
                     id: gameId,
                     status: 'drafting',
-                    createdAt: Date.now(),
                     players: [
                         { uid: currentUser.uid, name: "Player 1", hand: [] },
                         { uid: null, name: "Player 2", hand: [] }
@@ -227,7 +264,6 @@ function updateBackgroundTheme() {
                     battlefield: null,
                     battleResults: null
                 };
-
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), newGame);
                 await setDoc(lobbyRef, { gameId, hostId: currentUser.uid, status: 'waiting' });
                 watchGame(gameId);
@@ -251,130 +287,74 @@ function updateBackgroundTheme() {
             });
         }
 
-        // --- GAME LOGIC ENGINE ---
         function processGameState() {
-    // Add this line here
-    updateBackgroundTheme(); 
-
-    if (gameData.status === 'drafting' && !gameData.players[1].uid) {
-        renderWaitingForOpponent();
-        return;
-    }
-
-            if (gameData.status === 'drafting') {
-                renderDraft();
-            } else if (gameData.status === 'battle_selection') {
-                renderBattleSelection();
-            } else if (gameData.status === 'battle_result') {
-                renderResultUI();
-            } else if (gameData.status === 'finished') {
-                renderEndGame();
+            updateBackgroundTheme(); 
+            if (!isSinglePlayer && gameData.status === 'drafting' && !gameData.players[1].uid) {
+                renderWaitingForOpponent();
+                return;
             }
-        }
 
-        function renderMainMenu() {
-            screen.innerHTML = `
-                <div class="text-center py-12">
-                    <div class="bg-slate-800 p-10 rounded-3xl border border-white/10 shadow-2xl">
-                        <h2 class="text-2xl font-bold mb-6">Ready for Battle?</h2>
-                        <button id="find-match-btn" class="px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full font-black text-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20">
-                            FIND ONLINE MATCH
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('find-match-btn').onclick = startMatchmaking;
-            statusText.innerText = "Connect with a player to begin.";
+            if (gameData.status === 'drafting') renderDraft();
+            else if (gameData.status === 'battle_selection') renderBattleSelection();
+            else if (gameData.status === 'battle_result') renderResultUI();
+            else if (gameData.status === 'finished') renderEndGame();
+
+            if (isSinglePlayer) triggerCPUMove();
         }
 
         function renderWaitingForOpponent() {
             statusText.innerText = "WAITING FOR OPPONENT";
-            screen.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-20 text-center">
-                    <div class="relative mb-8">
-                        <div class="spinner w-16 h-16 border-4"></div>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <span class="text-xs font-bold animate-pulse text-blue-400">P2?</span>
-                        </div>
-                    </div>
-                    <h2 class="text-3xl font-black mb-2 text-white">Waiting for an opponent...</h2>
-                    <p class="text-slate-400 mb-8 max-w-xs">Match created! The game will start automatically when someone joins.</p>
-                    <button id="leave-lobby" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-full text-xs font-bold transition-all">
-                        LEAVE LOBBY
-                    </button>
-                </div>
-            `;
-            document.getElementById('leave-lobby').onclick = async () => {
-                if (playerRole === 'p0') {
-                    const lobbyRef = doc(db, 'artifacts', appId, 'public', 'data', 'lobby_global', 'open_game');
-                    await updateDoc(lobbyRef, { status: 'cancelled' });
-                }
-                location.reload();
-            };
+            screen.innerHTML = `<div class="flex flex-col items-center justify-center py-20 text-center"><div class="spinner w-16 h-16 border-4 mb-8"></div><h2 class="text-3xl font-black mb-2">Waiting...</h2><button onclick="location.reload()" class="px-6 py-2 bg-slate-700 rounded-full text-xs mt-4">LEAVE LOBBY</button></div>`;
         }
 
         function renderDraft() {
             const pIndex = gameData.draftOrder[gameData.draftStep];
             const isMyTurn = (pIndex === 0 && playerRole === 'p0') || (pIndex === 1 && playerRole === 'p1');
-            
-            statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT TO PICK";
+            statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR PICK";
 
             screen.innerHTML = `
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        ${gameData.pool.map((card, idx) => `
-            <div class="card-container">
-                <div onclick="${isMyTurn ? `pickCard(${idx})` : ''}" class="gradient-border ${isMyTurn ? 'cursor-pointer hover:-translate-y-1' : 'opacity-50 grayscale cursor-not-allowed'} transition-all shadow-md">
-                    <div class="bg-slate-800 p-2 rounded-lg h-full flex flex-col">
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${card.type}</span>
-                            <span class="text-[8px] font-bold text-yellow-500">LVL ${card.level}</span>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    ${gameData.pool.map((card, idx) => `
+                        <div class="card-container">
+                            <div onclick="${isMyTurn ? `pickCard(${idx})` : ''}" class="gradient-border ${isMyTurn ? 'cursor-pointer hover:-translate-y-1' : 'opacity-50 grayscale cursor-not-allowed'} transition-all shadow-md">
+                                <div class="bg-slate-800 p-2 rounded-lg h-full flex flex-col">
+                                    <div class="flex justify-between items-start mb-1">
+                                        <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${card.type}</span>
+                                        <span class="text-[8px] font-bold text-yellow-500">LVL ${card.level}</span>
+                                    </div>
+                                    <div class="w-full h-24 bg-slate-900/50 rounded flex items-center justify-center mb-1 text-[8px] text-slate-600">${card.name}</div>
+                                    <h3 class="font-bold text-[11px] truncate leading-tight">${card.name}</h3>
+                                    <p class="text-[8px] text-slate-500 mt-0.5 italic truncate">${card.special}</p>
+                                </div>
+                            </div>
+                            ${createStatsHTML(card.stats)}
                         </div>
-                        
-                        <img src="${card.image}" class="w-full h-24 object-contain bg-slate-900/50 rounded mb-1.5 border border-white/5" alt="${card.name}">
-                        
-                        <h3 class="font-bold text-[11px] truncate leading-tight">${card.name}</h3>
-                        <p class="text-[8px] text-slate-500 mt-0.5 italic truncate">${card.special}</p>
-                    </div>
+                    `).join('')}
                 </div>
-                ${createStatsHTML(card.stats)}
-            </div>
-        `).join('')}
-    </div>
-`;
+            `;
         }
 
         window.pickCard = async (idx) => {
             const pIdx = gameData.draftOrder[gameData.draftStep];
-            const card = gameData.pool[idx];
-            
-            const newPool = [...gameData.pool];
-            newPool.splice(idx, 1);
-            
-            const newPlayers = [...gameData.players];
-            newPlayers[pIdx].hand.push(card);
+            const card = gameData.pool.splice(idx, 1)[0];
+            gameData.players[pIdx].hand.push(card);
+            gameData.draftStep++;
 
-            const nextStep = gameData.draftStep + 1;
-            let nextStatus = 'drafting';
-            let nextBattlefield = null;
-
-            if (nextStep >= gameData.draftOrder.length) {
-                nextStatus = 'battle_selection';
-                nextBattlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
+            if (gameData.draftStep >= gameData.draftOrder.length) {
+                gameData.status = 'battle_selection';
+                gameData.battlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
             }
 
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                pool: newPool,
-                players: newPlayers,
-                draftStep: nextStep,
-                status: nextStatus,
-                battlefield: nextBattlefield
-            });
+            if (isSinglePlayer) {
+                processGameState();
+            } else {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), gameData);
+            }
         };
 
         function renderBattleSelection() {
             const myIdx = playerRole === 'p0' ? 0 : 1;
             const myCardSelected = gameData.activeCards[myIdx] !== null;
-            const oppCardSelected = gameData.activeCards[1 - myIdx] !== null;
 
             if (gameData.activeCards[0] && gameData.activeCards[1]) {
                 if (playerRole === 'p0') resolveBattle();
@@ -383,281 +363,122 @@ function updateBackgroundTheme() {
                 return;
             }
 
-            statusText.innerText = myCardSelected ? "Waiting for opponent's selection..." : "SELECT YOUR CHAMPION";
+            statusText.innerText = myCardSelected ? "Waiting for move..." : "SELECT YOUR CHAMPION";
             const field = gameData.battlefield;
-            const myPlayer = gameData.players[myIdx];
+            const myHand = gameData.players[myIdx].hand;
 
             screen.innerHTML = `
                 <div class="mb-6 p-6 bg-slate-800/80 rounded-xl border border-white/10 text-center shadow-2xl">
-                    <div class="inline-block px-3 py-1 mb-2 rounded-full text-[10px] font-bold tracking-widest uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                        ${field.type} Battlefield
-                    </div>
+                    <div class="inline-block px-3 py-1 mb-2 rounded-full text-[10px] font-bold tracking-widest uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">${field.type} Battlefield</div>
                     <h2 class="text-3xl font-black text-white mb-2">${field.name}</h2>
-                    <div class="flex justify-center gap-2">
-                        ${field.attrs.map(a => `<span class="px-2 py-1 bg-white/5 rounded text-xs font-mono text-slate-300 capitalize border border-white/5">${a}</span>`).join('')}
-                    </div>
+                    <div class="flex justify-center gap-2">${field.attrs.map(a => `<span class="px-2 py-1 bg-white/5 rounded text-xs font-mono text-slate-300 capitalize border border-white/5">${a}</span>`).join('')}</div>
                 </div>
-
                 <div class="flex flex-col items-center">
-                    ${myCardSelected ? `
-                        <div class="p-8 text-center bg-blue-500/10 rounded-xl border border-blue-500/20 animate-pulse">
-                            <p class="font-bold text-blue-400">UNIT DEPLOYED: ${gameData.activeCards[myIdx].name}</p>
-                            <p class="text-xs text-slate-500 mt-2">Awaiting your opponent's move...</p>
-                        </div>
-                    ` : `
+                    ${myCardSelected ? `<div class="p-8 text-center bg-blue-500/10 rounded-xl border border-blue-500/20 animate-pulse font-bold text-blue-400">UNIT DEPLOYED...</div>` : `
                         <div class="flex flex-wrap justify-center gap-4">
-                            ${myPlayer.hand.map((card, idx) => `
-    <div class="card-container">
-   <div onclick="selectCardForBattle(${idx})" class="w-28 bg-slate-800 p-2.5 rounded-xl border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all hover:scale-105 shadow-lg">
-   <img src="${card.image}" class="w-full h-20 object-contain bg-slate-900/50 rounded-lg mb-2 shadow-md" alt="${card.name}">
-   
-    <div class="flex justify-between items-center mb-1">
-        <span class="text-[8px] font-bold text-slate-500 px-1.5 py-0.5 bg-white/5 rounded">${card.type}</span>
-        <span class="text-[8px] font-black text-yellow-600">L${card.level}</span>
-    </div>
-    <div class="text-[11px] font-bold truncate">${card.name}</div>
-</div>
-        ${createStatsHTML(card.stats)}
-    </div>
-`).join('')}
+                            ${myHand.map((card, idx) => `
+                                <div class="card-container">
+                                    <div onclick="selectCardForBattle(${idx})" class="w-28 bg-slate-800 p-2.5 rounded-xl border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all hover:scale-105 shadow-lg">
+                                        <div class="w-full h-20 bg-slate-900/50 rounded mb-2"></div>
+                                        <div class="flex justify-between items-center mb-1"><span class="text-[8px] font-bold text-slate-500">${card.type}</span><span class="text-[8px] text-yellow-600">L${card.level}</span></div>
+                                        <div class="text-[11px] font-bold truncate">${card.name}</div>
+                                    </div>
+                                    ${createStatsHTML(card.stats)}
+                                </div>
+                            `).join('')}
                         </div>
                     `}
                 </div>
             `;
         }
 
-        window.selectCardForBattle = async (cardIdx) => {
-            const myIdx = playerRole === 'p0' ? 0 : 1;
-            const myHand = [...gameData.players[myIdx].hand];
-            const selected = myHand.splice(cardIdx, 1)[0];
-            
-            const playersUpdate = [...gameData.players];
-            playersUpdate[myIdx].hand = myHand;
-            
-            const activeUpdate = [...gameData.activeCards];
-            activeUpdate[myIdx] = selected;
+        window.selectCardForBattle = async (idx) => {
+            let movingIdx;
+            if (isSinglePlayer) {
+                movingIdx = (gameData.activeCards[0] === null) ? 0 : 1;
+            } else {
+                movingIdx = (playerRole === 'p0' ? 0 : 1);
+            }
 
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                players: playersUpdate,
-                activeCards: activeUpdate
-            });
+            const card = gameData.players[movingIdx].hand.splice(idx, 1)[0];
+            gameData.activeCards[movingIdx] = card;
+
+            if (isSinglePlayer) {
+                processGameState();
+            } else {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), gameData);
+            }
         };
 
         async function resolveBattle() {
-    // 1. Safety Check: Ensure game data is loaded
-    if (!gameData || !gameData.activeCards || !gameData.battlefield) {
-        console.error("Missing game data for battle");
-        return;
-    }
+            const field = gameData.battlefield;
+            const card0 = gameData.activeCards[0];
+            const card1 = gameData.activeCards[1];
+            let activeBattleAttrs = [...field.attrs];
+            let activations = ["", ""]; 
+            let finalScores = [0, 0];
 
-    const field = gameData.battlefield;
-    const card0 = gameData.activeCards[0];
-    const card1 = gameData.activeCards[1];
-    
-    if (!card0 || !card1) return;
-
-    // 2. Setup Variables
-    let activeBattleAttrs = [...field.attrs];
-    let activations = ["", ""]; 
-    let finalScores = [0, 0];
-
-    // --- PHASE 1: FIELD MODIFICATION (Narrow It Down - Village Only) ---
-    [card0, card1].forEach((card, i) => {
-        // Standard Check: Type must match field type
-        const typeMatches = (card.type === field.type);
-        
-        if (typeMatches && card.special === "Narrow It Down") {
-            let weakest = activeBattleAttrs.reduce((prev, curr) => 
-                (card.stats[curr] || 0) < (card.stats[prev] || 0) ? curr : prev
-            );
-            activeBattleAttrs = activeBattleAttrs.filter(a => a !== weakest);
-            activations[i] = `Special: ${weakest.toUpperCase()} dropped!`;
-        }
-    });
-
-    // --- PHASE 2: SCORE CALCULATION & TYPE-GATED SPECIALS ---
-    [card0, card1].forEach((card, i) => {
-        const oppIdx = 1 - i;
-        const oppCard = [card0, card1][oppIdx];
-        const typeMatches = (card.type === field.type);
-        
-        // 1. Calculate Base Score (Everyone gets this)
-        activeBattleAttrs.forEach(attr => { 
-            finalScores[i] += (card.stats[attr] || 0); 
-        });
-
-        // 2. ONLY run specials if the card type matches the battlefield type
-        if (typeMatches && card.special) {
-            
-            // FOCUSED TRAINING (Nature)
-            if (card.special === "Focused Training") {
-                finalScores[i] += 2;
-                activations[i] = "Special: +2 attribute total!";
-            }
-            
-            // UNDERDOG MENTALITY (Nature)
-            else if (card.special === "Underdog Mentality" && card.level < oppCard.level) {
-                finalScores[i] += 5;
-                activations[i] = "Special: +5 Underdog bonus!";
-            }
-
-            // SET MY OWN RULES (Nature)
-            else if (card.special === "Set My Own Rules") {
-                let otherAttrs = Object.keys(card.stats).filter(a => !activeBattleAttrs.includes(a) && a !== "Total" && typeof card.stats[a] === 'number');
-                if (otherAttrs.length > 0) {
-                    let bestAttr = otherAttrs.reduce((a, b) => card.stats[a] > card.stats[b] ? a : b);
-                    finalScores[i] += card.stats[bestAttr];
-                    finalScores[oppIdx] += (oppCard.stats[bestAttr] || 0);
-                    activations[i] = `Rules Set: Added ${bestAttr.toUpperCase()}!`;
+            [card0, card1].forEach((card, i) => {
+                activeBattleAttrs.forEach(attr => { finalScores[i] += (card.stats[attr] || 0); });
+                if (card.type === field.type && card.special === "Focused Training") {
+                    finalScores[i] += 2;
+                    activations[i] = "Special: +2 attribute total!";
                 }
-            }
+            });
 
-            // REINFORCEMENTS (Nature)
-            else if (card.special === "Reinforcements") {
-                const sameTypeCount = gameData.players[i].hand.filter(c => c.type === card.type).length;
-                finalScores[i] += sameTypeCount;
-                activations[i] = `Special: +${sameTypeCount} Reinforcements!`;
-            }
+            const winnerIdx = finalScores[0] >= finalScores[1] ? 0 : 1;
+            const loserIdx = 1 - winnerIdx;
+            const cardCaptured = gameData.activeCards[loserIdx];
+            gameData.players[winnerIdx].hand.push(cardCaptured);
+            
+            gameData.status = gameData.players[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
+            gameData.battleResults = { scores: finalScores, winnerIdx, attrs: activeBattleAttrs, activations };
 
-            // BATTLE READY (Village)
-            else if (card.special === "Battle Ready") {
-                finalScores[i] += activeBattleAttrs.length;
-                activations[i] = "Special: All attributes +1!";
-            }
-
-            // RESCUE MISSION (Village)
-            else if (card.special === "Rescue Mission") {
-                finalScores[i] -= 3;
-                activations[i] = "RESCUE: Regaining lost ally (-3 score)";
-            }
-
-            // BONUS TRAINING (Village)
-            else if (card.special === "Bonus Training") {
-                let strongest = Object.keys(card.stats).filter(a => a !== "Total")
-                    .reduce((a, b) => (card.stats[a] || 0) > (card.stats[b] || 0) ? a : b);
-                finalScores[i] += 5;
-                activations[i] = `Special: +5 bonus (${strongest})!`;
+            if (isSinglePlayer) {
+                processGameState();
+            } else {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), gameData);
             }
         }
-    });
-
-    // --- PHASE 3: UPDATING FIREBASE ---
-    const winnerIdx = finalScores[0] >= finalScores[1] ? 0 : 1;
-    const loserIdx = 1 - winnerIdx;
-    
-    // SAFE COPY OF PLAYERS
-    let newPlayers = gameData.players.map(p => ({
-        ...p,
-        hand: Array.isArray(p.hand) ? [...p.hand] : []
-    }));
-
-    // Standard card transfer
-    const cardWon = gameData.activeCards[loserIdx];
-    newPlayers[winnerIdx].hand.push(cardWon);
-
-    // Rescue Mission Check
-    [0, 1].forEach(i => {
-        if (activations[i] && activations[i].includes("RESCUE")) {
-            const oppIdx = 1 - i;
-            if (newPlayers[oppIdx].hand.length > 1) { // Ensure they have a card other than the one just lost
-                const regainedCard = newPlayers[oppIdx].hand.pop();
-                newPlayers[i].hand.push(regainedCard);
-            }
-        }
-    });
-
-    let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
-
-    try {
-        const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
-        await updateDoc(gameRef, {
-            status: nextStatus,
-            players: newPlayers,
-            battleResults: {
-                scores: finalScores,
-                winnerIdx,
-                attrs: activeBattleAttrs,
-                activations: activations
-            }
-        });
-    } catch (err) {
-        console.error("Firebase Update Error:", err);
-        alert("Connection failed. Check your internet or Firebase rules.");
-    }
-}
 
         function renderResultUI() {
-    const res = gameData.battleResults;
-    statusText.innerText = "CLASH COMPLETE";
-
-    screen.innerHTML = `
-        <div class="mb-6 text-center">
-            <div class="inline-block px-4 py-2 bg-slate-800 rounded-lg border border-white/10">
-                <span class="text-[10px] text-slate-400 block uppercase font-bold tracking-widest mb-1">Attributes Used</span>
-                <div class="flex justify-center gap-2">
-                    ${res.attrs.map(a => `<span class="text-xs font-mono text-blue-300 capitalize">${a}</span>`).join(' • ')}
+            const res = gameData.battleResults;
+            screen.innerHTML = `
+                <div class="mb-6 text-center">
+                    <div class="text-4xl font-black mb-6">Player ${res.winnerIdx + 1} Wins!</div>
                 </div>
-            </div>
-        </div>
-
-        <div class="flex justify-between gap-6 mb-8 max-w-3xl mx-auto">
-            
-            <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500 shadow-lg' : 'border-red-900/30'}">
-                <img src="${gameData.activeCards[0].image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-3 border border-white/10">
-                <div class="text-center font-bold mb-1 opacity-80 text-[10px] uppercase tracking-tighter">${gameData.activeCards[0].name}</div>
-                <div class="text-4xl font-black text-center text-blue-400 mb-2">${res.scores[0]}</div>
-                
-                ${res.activations[0] ? `
-                    <div class="mt-2 p-2 bg-blue-500/10 border border-blue-500/20 rounded text-[9px] text-blue-300 italic animate-pulse text-center">
-                        ✨ ${res.activations[0]}
+                <div class="flex justify-center gap-6 mb-8">
+                    <div class="bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 0 ? 'border-green-500' : 'border-red-900/30'}">
+                        <div class="text-4xl font-black">${res.scores[0]}</div>
+                        <div class="text-[10px] text-slate-500 uppercase">${gameData.activeCards[0].name}</div>
                     </div>
-                ` : ''}
-                </div>
-
-            <div class="flex items-center text-2xl font-black italic text-slate-700">VS</div>
-
-            <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500 shadow-lg' : 'border-red-900/30'}">
-                <img src="${gameData.activeCards[1].image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-3 border border-white/10">
-                <div class="text-center font-bold mb-1 opacity-80 text-[10px] uppercase tracking-tighter">${gameData.activeCards[1].name}</div>
-                <div class="text-4xl font-black text-center text-purple-400 mb-2">${res.scores[1]}</div>
-                
-                ${res.activations[1] ? `
-                    <div class="mt-2 p-2 bg-purple-500/10 border border-purple-500/20 rounded text-[9px] text-purple-300 italic animate-pulse text-center">
-                        ✨ ${res.activations[1]}
+                    <div class="bg-slate-800 p-6 rounded-2xl border-4 ${res.winnerIdx === 1 ? 'border-green-500' : 'border-red-900/30'}">
+                        <div class="text-4xl font-black">${res.scores[1]}</div>
+                        <div class="text-[10px] text-slate-500 uppercase">${gameData.activeCards[1].name}</div>
                     </div>
-                ` : ''}
                 </div>
-        </div>
-        
-        <div class="text-center">
-            <div class="text-3xl font-black mb-4">Player ${res.winnerIdx + 1} Wins!</div>
-            ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold shadow-lg hover:bg-blue-500 transition-all active:scale-95">Next Battlefield</button>` : `<p class="animate-pulse text-slate-500 text-sm">Waiting for Host to pick next field...</p>`}
-        </div>
-    `;
-}
+                <div class="text-center">
+                    ${playerRole === 'p0' ? `<button onclick="nextRound()" class="bg-blue-600 px-12 py-4 rounded-full font-bold">Next Battlefield</button>` : `<p class="animate-pulse">Waiting for host...</p>`}
+                </div>
+            `;
+        }
 
         window.nextRound = async () => {
             const winnerIdx = gameData.battleResults.winnerIdx;
-            const newActive = [null, null];
-            newActive[winnerIdx] = gameData.activeCards[winnerIdx];
+            const winningCard = gameData.activeCards[winnerIdx];
+            gameData.activeCards = [null, null];
+            gameData.activeCards[winnerIdx] = winningCard;
+            gameData.status = 'battle_selection';
+            gameData.battlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
+            gameData.battleResults = null;
 
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                status: 'battle_selection',
-                activeCards: newActive,
-                battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)],
-                battleResults: null
-            });
+            if (isSinglePlayer) processGameState();
+            else await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), gameData);
         };
 
         function renderEndGame() {
             const winnerIdx = gameData.battleResults.winnerIdx;
-            screen.innerHTML = `
-                <div class="text-center py-12">
-                    <h2 class="text-6xl font-black text-yellow-500 mb-6">VICTORY</h2>
-                    <p class="text-2xl mb-12">Player ${winnerIdx + 1} Wins!</p>
-                    <button onclick="location.reload()" class="bg-white text-black px-12 py-4 rounded-full font-bold">Return to Menu</button>
-                </div>
-            `;
+            screen.innerHTML = `<div class="text-center py-12"><h2 class="text-6xl font-black text-yellow-500 mb-6">VICTORY</h2><p class="text-2xl mb-12">Player ${winnerIdx + 1} Wins!</p><button onclick="location.reload()" class="bg-white text-black px-12 py-4 rounded-full font-bold">Return to Menu</button></div>`;
         }
 
         initAuth();
