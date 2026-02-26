@@ -541,7 +541,9 @@ async function triggerCPUMove() {
 
     // --- PHASE 1: FIELD MODIFICATION (Narrow It Down - Village Only) ---
     [card0, card1].forEach((card, i) => {
+        // Standard Check: Type must match field type
         const typeMatches = (card.type === field.type);
+        
         if (typeMatches && card.special === "Narrow It Down") {
             let weakest = activeBattleAttrs.reduce((prev, curr) => 
                 (card.stats[curr] || 0) < (card.stats[prev] || 0) ? curr : prev
@@ -557,19 +559,27 @@ async function triggerCPUMove() {
         const oppCard = [card0, card1][oppIdx];
         const typeMatches = (card.type === field.type);
         
+        // 1. Calculate Base Score (Everyone gets this)
         activeBattleAttrs.forEach(attr => { 
             finalScores[i] += (card.stats[attr] || 0); 
         });
 
+        // 2. ONLY run specials if the card type matches the battlefield type
         if (typeMatches && card.special) {
+            
+            // FOCUSED TRAINING (Nature)
             if (card.special === "Focused Training") {
                 finalScores[i] += 2;
                 activations[i] = "Special: +2 attribute total!";
             }
+            
+            // UNDERDOG MENTALITY (Nature)
             else if (card.special === "Underdog Mentality" && card.level < oppCard.level) {
                 finalScores[i] += 5;
                 activations[i] = "Special: +5 Underdog bonus!";
             }
+
+            // SET MY OWN RULES (Nature)
             else if (card.special === "Set My Own Rules") {
                 let otherAttrs = Object.keys(card.stats).filter(a => !activeBattleAttrs.includes(a) && a !== "Total" && typeof card.stats[a] === 'number');
                 if (otherAttrs.length > 0) {
@@ -579,22 +589,32 @@ async function triggerCPUMove() {
                     activations[i] = `Rules Set: Added ${bestAttr.toUpperCase()}!`;
                 }
             }
+
+            // REINFORCEMENTS (Nature)
             else if (card.special === "Reinforcements") {
                 const sameTypeCount = gameData.players[i].hand.filter(c => c.type === card.type).length;
                 finalScores[i] += sameTypeCount;
                 activations[i] = `Special: +${sameTypeCount} Reinforcements!`;
             }
+
+            // BATTLE READY (Village)
             else if (card.special === "Battle Ready") {
                 finalScores[i] += activeBattleAttrs.length;
                 activations[i] = "Special: All attributes +1!";
             }
+
+            // RESCUE MISSION (Village)
             else if (card.special === "Rescue Mission") {
                 finalScores[i] -= 3;
                 activations[i] = "RESCUE: Regaining lost ally (-3 score)";
             }
+
+            // BONUS TRAINING (Village)
             else if (card.special === "Bonus Training") {
+                let strongest = Object.keys(card.stats).filter(a => a !== "Total")
+                    .reduce((a, b) => (card.stats[a] || 0) > (card.stats[b] || 0) ? a : b);
                 finalScores[i] += 5;
-                activations[i] = `Special: +5 bonus!`;
+                activations[i] = `Special: +5 bonus (${strongest})!`;
             }
         }
     });
@@ -603,6 +623,7 @@ async function triggerCPUMove() {
     const winnerIdx = finalScores[0] >= finalScores[1] ? 0 : 1;
     const loserIdx = 1 - winnerIdx;
     
+    // Create a safe copy of players to modify hands
     let newPlayers = gameData.players.map(p => ({
         ...p,
         hand: [...p.hand]
@@ -612,8 +633,6 @@ async function triggerCPUMove() {
     const cardCaptured = gameData.activeCards[loserIdx];
     newPlayers[winnerIdx].hand.push(cardCaptured);
 
-    // Note: The winning card is NOT added to the hand yet; it stays in activeCards
-
     // Handle "Rescue Mission" ability for single-player
     if (activations[winnerIdx] && activations[winnerIdx].includes("RESCUE")) {
         if (newPlayers[loserIdx].hand.length > 0) {
@@ -622,9 +641,12 @@ async function triggerCPUMove() {
         }
     }
 
+    // Check for Game Over: If loser has 0 cards left, status is 'finished'
+    let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
+    
     // Prepare the update package
     const resultsData = {
-        status: newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result',
+        status: nextStatus,
         players: newPlayers,
         battleResults: {
             scores: finalScores,
@@ -635,11 +657,14 @@ async function triggerCPUMove() {
     };
 
     if (isSinglePlayer) {
+        // Apply changes directly to local state
         gameData.status = resultsData.status;
         gameData.players = resultsData.players;
         gameData.battleResults = resultsData.battleResults;
+        
         processGameState();
     } else {
+        // Multiplayer: Sync to Firebase
         try {
             const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
             await updateDoc(gameRef, resultsData);
@@ -701,24 +726,23 @@ async function triggerCPUMove() {
 
         window.nextRound = async () => {
     const winnerIdx = gameData.battleResults.winnerIdx;
+    const currentWinningCard = gameData.activeCards[winnerIdx]; // Renamed for safety
     
-    // Clear the loser's slot, but KEEP the winner's card in play 
-    gameData.activeCards[1 - winnerIdx] = null; 
+    gameData.activeCards = [null, null];
+    gameData.activeCards[winnerIdx] = currentWinningCard; 
     
-    // Select the next random battlefield 
     gameData.status = 'battle_selection';
     gameData.battlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
     gameData.battleResults = null;
 
     if (isSinglePlayer) {
-        processGameState(); 
+        processGameState(); //
     } else {
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: gameData.status,
             activeCards: gameData.activeCards,
             battlefield: gameData.battlefield,
-            battleResults: null,
-            players: gameData.players
+            battleResults: null
         });
     }
 };
