@@ -218,20 +218,25 @@ const CARDS_DATA = [
 
         // --- UI UTILS ---
         function createStatsHTML(stats) {
-    // Check which attributes are boosted by the current battlefield
+    // Determine which attributes are currently boosted by the battlefield
     const boostedAttrs = gameData?.battlefield?.attrs || [];
 
-    return Object.entries(stats).map(([attr, val]) => {
-        const isBoosted = boostedAttrs.includes(attr);
-        
-        return `
-            <div class="flex justify-between items-center text-[10px] px-2 py-1 rounded mb-1
-                ${isBoosted ? 'bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30' : 'text-slate-300'}">
-                <span class="uppercase tracking-widest">${attr}</span>
-                <span class="${isBoosted ? 'animate-pulse' : ''}">${val}</span>
+    return `
+        <div class="stats-tooltip">
+            <div class="text-[9px] font-bold text-blue-400 mb-1 border-b border-white/10 pb-1 uppercase">Attribute Stats</div>
+            <div class="stat-grid">
+                ${Object.entries(stats).map(([key, val]) => {
+                    // Check if this specific attribute is boosted
+                    const isBoosted = boostedAttrs.includes(key);
+                    
+                    return `
+                        <span class="capitalize ${isBoosted ? 'text-yellow-400 font-bold animate-pulse' : 'text-slate-400'}">${key}</span>
+                        <span class="font-bold ${isBoosted ? 'text-yellow-400 animate-pulse' : 'text-white'}">${val}</span>
+                    `;
+                }).join('')}
             </div>
-        `;
-    }).join('');
+        </div>
+    `;
 }
 
 function updateBackgroundTheme() {
