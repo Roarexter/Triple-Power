@@ -6,31 +6,6 @@
     <title>Battlefield Clash Online</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Gentle floating animation */
-@keyframes card-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
-}
-
-/* Base class for cards in hand */
-.floating-card {
-    animation: card-float 4s ease-in-out infinite;
-    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
-}
-
-/* Interaction: Lift higher and stop floating when hovered */
-.floating-card:hover {
-    animation-play-state: paused;
-    transform: translateY(-20px) scale(1.05) !important;
-    z-index: 50;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
-}
-
-/* Staggered delays so they don't move at the same time */
-.floating-card:nth-child(2n) { animation-delay: 0.5s; animation-duration: 4.5s; }
-.floating-card:nth-child(3n) { animation-delay: 1.2s; animation-duration: 3.8s; }
-.floating-card:nth-child(4n) { animation-delay: 0.8s; animation-duration: 4.2s; }
-        
         .particle {
     position: fixed;
     pointer-events: none;
@@ -551,16 +526,18 @@ function updateEnvironment() {
                         </div>
                     ` : `
                         <div class="flex flex-wrap justify-center gap-4">
-                            ${gameData.players[playerIdx].hand.map((card, idx) => `
-    <div class="floating-card card-container relative group" 
-         onclick="playCard(${playerIdx}, ${JSON.stringify(card).replace(/"/g, '&quot;')})">
-        
-        <div class="bg-slate-800 rounded-2xl p-3 border-2 border-white/5 group-hover:border-blue-500/50 transition-all shadow-xl">
-            <img src="${card.image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-2">
-            <div class="text-center font-bold text-xs truncate">${card.name}</div>
-            
-            ${createStatsHTML(card.stats)}
-        </div>
+                            ${myPlayer.hand.map((card, idx) => `
+    <div class="card-container">
+   <div onclick="selectCardForBattle(${idx})" class="w-28 bg-slate-800 p-2.5 rounded-xl border-2 border-transparent hover:border-blue-500 cursor-pointer transition-all hover:scale-105 shadow-lg">
+   <img src="${card.image}" class="w-full h-20 object-contain bg-slate-900/50 rounded-lg mb-2 shadow-md" alt="${card.name}">
+   
+    <div class="flex justify-between items-center mb-1">
+        <span class="text-[8px] font-bold text-slate-500 px-1.5 py-0.5 bg-white/5 rounded">${card.type}</span>
+        <span class="text-[8px] font-black text-yellow-600">L${card.level}</span>
+    </div>
+    <div class="text-[11px] font-bold truncate">${card.name}</div>
+</div>
+        ${createStatsHTML(card.stats)}
     </div>
 `).join('')}
                         </div>
