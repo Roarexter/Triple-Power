@@ -6,6 +6,21 @@
     <title>Battlefield Clash Online</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        .particle {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    border-radius: 50%;
+    filter: blur(1px);
+}
+
+@keyframes particle-float {
+    0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.6; }
+    100% { transform: translateY(110vh) translateX(100px) rotate(360deg); opacity: 0; }
+}
         @keyframes clash-shake {
     0% { transform: scale(1); }
     20% { transform: scale(1.2) rotate(3deg); }
@@ -237,6 +252,48 @@ function updateBackgroundTheme() {
     // Smooth transition effect
     document.body.style.transition = "background 1s ease";
 }
+
+function updateEnvironment() {
+    // Remove old particles first
+    document.querySelectorAll('.particle').forEach(p => p.remove());
+
+    if (!gameData || !gameData.battlefield) return;
+
+    const fieldType = gameData.battlefield.type; // 'Nature' or 'Village'
+    let color = '';
+    let count = 15;
+
+    // Set theme based on battlefield
+    if (fieldType === 'Nature') {
+        color = 'rgba(34, 197, 94, 0.3)'; // Green leaves/pollen
+    } else if (fieldType === 'Village') {
+        color = 'rgba(251, 191, 36, 0.2)'; // Golden dust/embers
+    } else {
+        color = 'rgba(255, 255, 255, 0.1)'; // Default white mist
+    }
+
+    const container = document.body;
+
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        
+        // Randomize appearance
+        const size = Math.random() * 10 + 5 + 'px';
+        p.style.width = size;
+        p.style.height = size;
+        p.style.background = color;
+        
+        // Randomize spawn position and animation
+        p.style.left = Math.random() * 100 + 'vw';
+        const duration = Math.random() * 5 + 5 + 's';
+        const delay = Math.random() * 10 + 's';
+        
+        p.style.animation = `particle-float ${duration} linear ${delay} infinite`;
+        
+        container.appendChild(p);
+    }
+}
         
         // --- MATCHMAKING ---
         async function startMatchmaking() {
@@ -308,6 +365,9 @@ function updateBackgroundTheme() {
     // Add this line here
     updateBackgroundTheme(); 
 
+// ADD THE TRIGGER HERE:
+    updateEnvironment();
+            
     if (gameData.status === 'drafting' && !gameData.players[1].uid) {
         renderWaitingForOpponent();
         return;
