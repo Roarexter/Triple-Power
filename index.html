@@ -218,18 +218,29 @@ const CARDS_DATA = [
 
         // --- UI UTILS ---
         function createStatsHTML(stats) {
-            return `
-                <div class="stats-tooltip">
-                    <div class="text-[9px] font-bold text-blue-400 mb-1 border-b border-white/10 pb-1 uppercase">Attribute Stats</div>
-                    <div class="stat-grid">
-                        ${Object.entries(stats).map(([key, val]) => `
-                            <span class="capitalize text-slate-400">${key}</span>
-                            <span class="font-bold text-white">${val}</span>
-                        `).join('')}
-                    </div>
+    // 1. Identify which attributes the current battlefield is boosting
+    const boostedAttrs = gameData?.battlefield?.attrs || [];
+
+    return Object.entries(stats).map(([attr, val]) => {
+        // 2. Check if this specific attribute (e.g., 'strength') matches the battlefield
+        const isBoosted = boostedAttrs.includes(attr);
+
+        return `
+            <div class="flex justify-between items-center text-[10px] px-2 py-1 rounded transition-all duration-300
+                ${isBoosted 
+                    ? 'bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30 shadow-[0_0_8px_rgba(234,179,8,0.2)] animate-pulse' 
+                    : 'text-slate-400 opacity-80'}">
+                
+                <div class="flex items-center gap-1">
+                    ${isBoosted ? '<span>✨</span>' : ''} 
+                    <span class="uppercase tracking-tighter">${attr}</span>
                 </div>
-            `;
-        }
+                
+                <span class="${isBoosted ? 'scale-110' : ''}">${val}</span>
+            </div>
+        `;
+    }).join('');
+}
 
 function updateBackgroundTheme() {
     if (!gameData || !gameData.battlefield) {
