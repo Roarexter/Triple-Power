@@ -833,14 +833,11 @@ function updateEnvironment() {
         function renderResultUI() {
     const res = gameData.battleResults;
     
-    // 1. Critical Game Over Check
-    if (gameData.status === 'finished') {
-        renderEndGame();
-        return;
-    }
-
-    // 2. Safety check for data sync
+    // Safety check for data sync
     if (!res) return;
+
+    // Check if either player is out of cards to determine if this is the final round
+    const isLastRound = gameData.players[0].hand.length === 0 || gameData.players[1].hand.length === 0;
 
     screen.innerHTML = `
         <div class="space-y-8 max-w-4xl mx-auto px-4">
@@ -848,11 +845,10 @@ function updateEnvironment() {
                 <div class="text-xs text-yellow-500 uppercase tracking-[0.4em] font-black mb-2 animate-pulse">
                     ${gameData.battlefield ? gameData.battlefield.name : 'Battleground'}
                 </div>
-                <h2 class="text-5xl font-black text-white italic tracking-tighter">BATTLE REVEAL</h2>
+                <h2 class="text-5xl font-black text-white italic tracking-tighter uppercase">Battle Result</h2>
             </div>
 
             <div class="flex justify-between items-center gap-4 mb-8 overflow-hidden py-4">
-                
                 <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 animate-slide-left animate-clash-shake 
                     ${res.winnerIdx === 0 ? 'border-green-500 animate-winner-ready shadow-2xl shadow-green-500/20' : 'border-slate-700 opacity-40'}">
                     
@@ -891,20 +887,18 @@ function updateEnvironment() {
             </div>
 
             <div class="text-center animate-pop" style="animation-delay: 1s">
-    <div class="text-3xl font-black text-white mb-8 uppercase">
-        PLAYER ${res.winnerIdx + 1} WINS THE ROUND!
-    </div>
-    
-    ${playerRole === 'p0' ? `
-        <button onclick="nextRound()" class="bg-blue-600 hover:bg-blue-500 text-white px-16 py-5 rounded-full font-black shadow-xl transition-all hover:scale-110 uppercase tracking-widest">
-            ${(gameData.players[0].hand.length === 0 || gameData.players[1].hand.length === 0) ? 'Finish Match' : 'Next Battle →'}
-        </button>
-    ` : `
-        <div class="bg-slate-800/80 px-8 py-4 rounded-full border border-white/5 inline-block">
-            <span class="text-slate-400 font-bold text-sm tracking-tighter animate-pulse">WAITING FOR HOST...</span>
-        </div>
-    `}
-</div>
+                <div class="text-3xl font-black text-white mb-8 uppercase">
+                    PLAYER ${res.winnerIdx + 1} WINS THE ROUND!
+                </div>
+                
+                ${playerRole === 'p0' ? `
+                    <button onclick="nextRound()" class="bg-blue-600 hover:bg-blue-500 text-white px-16 py-5 rounded-full font-black shadow-xl transition-all hover:scale-110 uppercase tracking-widest">
+                        ${isLastRound ? 'Finish Match' : 'Next Battle →'}
+                    </button>
+                ` : `
+                    <div class="bg-slate-800/80 px-8 py-4 rounded-full border border-white/5 inline-block">
+                        <span class="text-slate-400 font-bold text-sm tracking-tighter animate-pulse">WAITING FOR HOST...</span>
+                    </div>
                 `}
             </div>
         </div>
