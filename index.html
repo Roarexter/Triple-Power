@@ -208,6 +208,25 @@ const CARDS_DATA = [
             }
         };
 
+window.renderEndGame = () => {
+    // Determine winner based on who has cards left in hand
+    const winnerIdx = gameData.players[0].hand.length > 0 ? 0 : 1;
+    
+    screen.innerHTML = `
+        <div class="text-center py-12 animate-pop">
+            <h2 class="text-8xl font-black text-yellow-500 mb-6 italic tracking-tighter uppercase">Victory</h2>
+            <div class="bg-slate-800 p-10 rounded-3xl border border-white/10 shadow-2xl inline-block mb-12">
+                <p class="text-4xl font-black text-white uppercase tracking-widest mb-2">Player ${winnerIdx + 1}</p>
+                <p class="text-slate-400 font-bold uppercase tracking-widest text-sm">Has Conquered the Workplace</p>
+            </div>
+            <br>
+            <button onclick="location.reload()" class="bg-white hover:bg-slate-200 text-black px-16 py-5 rounded-full font-black uppercase tracking-widest transition-all hover:scale-110 shadow-xl">
+                Return to Menu
+            </button>
+        </div>
+    `;
+};
+        
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -908,17 +927,16 @@ function updateEnvironment() {
         window.nextRound = async () => {
     const winnerIdx = gameData.battleResults.winnerIdx;
     
-    // Check if either player has 0 cards left in hand
+    // Check if either player has 0 cards left
     const p0HandEmpty = gameData.players[0].hand.length === 0;
     const p1HandEmpty = gameData.players[1].hand.length === 0;
 
     if (p0HandEmpty || p1HandEmpty) {
-        // Someone is out of cards! Transition to the final win screen
+        // Transition to finished state
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: 'finished'
         });
     } else {
-        // Game continues as normal
         const newActive = [null, null];
         newActive[winnerIdx] = gameData.activeCards[winnerIdx];
 
@@ -930,17 +948,6 @@ function updateEnvironment() {
         });
     }
 };
-
-        function renderEndGame() {
-            const winnerIdx = gameData.battleResults.winnerIdx;
-            screen.innerHTML = `
-                <div class="text-center py-12">
-                    <h2 class="text-6xl font-black text-yellow-500 mb-6">VICTORY</h2>
-                    <p class="text-2xl mb-12">Player ${winnerIdx + 1} Wins!</p>
-                    <button onclick="location.reload()" class="bg-white text-black px-12 py-4 rounded-full font-bold">Return to Menu</button>
-                </div>
-            `;
-        }
 
         initAuth();
     </script>
