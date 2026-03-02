@@ -308,13 +308,13 @@ window.renderCardLibrary = () => {
 
                     <div class="flex flex-wrap gap-6 justify-start">
                         ${cards
-                            // 2. Sort by Level within the type group
-                            .sort((a, b) => a.lvl - b.lvl)
+                            // 2. Updated sorting to use 'level' instead of 'lvl'
+                            .sort((a, b) => (a.level || 0) - (b.level || 0))
                             .map(card => `
                             <div class="floating-card relative group w-44">
                                 <div class="bg-slate-800 rounded-2xl p-4 border-2 border-white/5 group-hover:border-blue-500/50 transition-all shadow-xl h-full flex flex-col">
                                     <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-blue-600 text-[10px] font-black text-white uppercase border border-white/20 z-10">
-                                        LVL ${card.lvl}
+                                        LVL ${card.level || 1}
                                     </div>
                                     
                                     <img src="${card.image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-2 group-hover:scale-110 transition-transform">
