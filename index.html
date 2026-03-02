@@ -283,6 +283,50 @@ window.renderHowToPlay = () => {
         </div>
     `;
 };
+
+window.renderCardLibrary = () => {
+    screen.innerHTML = `
+        <div class="space-y-8 animate-pop pb-12">
+            <div class="text-center">
+                <h2 class="text-4xl font-black italic mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 uppercase">Card Library</h2>
+                <p class="text-slate-400 text-sm">Study the warriors and their attributes</p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto px-4">
+                ${CARDS.map(card => `
+                    <div class="floating-card card-container relative group w-40">
+                        <div class="bg-slate-800 rounded-2xl p-3 border-2 border-white/5 group-hover:border-blue-500/50 transition-all shadow-xl">
+                            <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-900 text-[8px] font-bold text-blue-400 uppercase border border-blue-500/20">
+                                ${card.type}
+                            </div>
+                            <img src="${card.image}" class="w-full h-28 object-contain bg-slate-900/50 rounded-xl mb-2">
+                            <div class="text-center font-bold text-[10px] truncate uppercase tracking-tighter mb-2">${card.name}</div>
+                            
+                            <div class="space-y-1">
+                                ${Object.entries(card.stats).map(([key, val]) => `
+                                    <div class="flex justify-between text-[9px] border-b border-white/5 pb-0.5">
+                                        <span class="capitalize text-slate-500">${key}</span>
+                                        <span class="font-bold text-slate-200">${val}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="mt-2 text-[8px] text-center italic text-yellow-500/70 leading-tight">
+                                ${card.specialText}
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="text-center">
+                <button onclick="window.renderMainMenu()" class="px-12 py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 border border-white/10">
+                    ← Back to Menu
+                </button>
+            </div>
+        </div>
+    `;
+};
         
 function updateBackgroundTheme() {
     if (!gameData || !gameData.battlefield) {
@@ -447,14 +491,18 @@ function updateEnvironment() {
                         Find Online Match
                     </button>
                     
-                    <button onclick="renderHowToPlay()" class="text-slate-500 hover:text-white text-xs font-black tracking-[0.2em] uppercase transition-colors">
-                        ? How to Play
-                    </button>
+                    <div class="flex gap-6 mt-2">
+                        <button onclick="renderHowToPlay()" class="text-slate-500 hover:text-white text-xs font-black tracking-[0.2em] uppercase transition-colors">
+                            ? How to Play
+                        </button>
+                        <button onclick="renderCardLibrary()" class="text-slate-500 hover:text-white text-xs font-black tracking-[0.2em] uppercase transition-colors">
+                            🗂 Card Library
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     `;
-    // We use setTimeout to ensure the DOM is ready before attaching the ID-based listener
     setTimeout(() => {
         const btn = document.getElementById('find-match-btn');
         if (btn) btn.onclick = startMatchmaking;
