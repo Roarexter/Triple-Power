@@ -212,7 +212,7 @@ const CARDS_DATA = [
             if (user) {
                 currentUser = user;
                 userInfo.innerText = `Logged in as: ${user.uid}`;
-                renderMainMenu();
+                window.renderMainMenu();
             }
         });
         
@@ -293,7 +293,7 @@ window.renderCardLibrary = () => {
             </div>
 
             <div class="flex flex-wrap justify-center gap-6 max-w-6xl mx-auto px-4">
-                ${CARDS.map(card => `
+                ${CARDS_DATA.map(card => `
                     <div class="floating-card card-container relative group w-40">
                         <div class="bg-slate-800 rounded-2xl p-3 border-2 border-white/5 group-hover:border-blue-500/50 transition-all shadow-xl h-full flex flex-col">
                             <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-900 text-[8px] font-bold text-blue-400 uppercase border border-blue-500/20">
