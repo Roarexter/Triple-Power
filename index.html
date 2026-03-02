@@ -247,24 +247,36 @@ window.renderHowToPlay = () => {
                     How to Play
                 </h2>
                 
-                <div class="space-y-6 text-left text-slate-300">
+                <div class="space-y-4 text-left text-slate-300">
                     <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
                         <h3 class="text-blue-400 font-black mb-1 uppercase text-xs tracking-widest">1. The Draft</h3>
-                        <p class="text-sm">Pick 4 cards from the pool. Choose wisely based on their attribute stats!</p>
+                        <p class="text-sm opacity-80">Pick 4 cards from the pool. Choose wisely based on their attribute stats!</p>
                     </div>
 
                     <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
                         <h3 class="text-purple-400 font-black mb-1 uppercase text-xs tracking-widest">2. Battlefield Boosts</h3>
-                        <p class="text-sm">Each round has a Battlefield that boosts 3 stats (e.g., Speed, Tech). These stats turn <span class="text-yellow-400 font-bold">Yellow and Pulse</span>.</p>
+                        <p class="text-sm opacity-80">Each round has a Battlefield that boosts 3 stats (e.g., Speed, Tech). These stats turn <span class="text-yellow-400 font-bold">Yellow and Pulse</span>.</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 p-4 rounded-xl border border-yellow-500/20 shadow-inner">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xl">✨</span>
+                            <h3 class="text-yellow-500 font-black uppercase text-xs tracking-widest">3. Special Abilities</h3>
+                        </div>
+                        <p class="text-sm mb-2 opacity-90">Each card has a unique Special. It triggers <span class="text-white font-bold underline">only</span> if the Card Type (e.g., Nature) matches the Battlefield Type.</p>
+                        <ul class="text-[11px] space-y-1 text-slate-400 italic">
+                            <li>• <b class="text-slate-200">Bonus:</b> Adds +5 or +10 to your total score.</li>
+                            <li>• <b class="text-slate-200">Logic:</b> If card is "Village" and field is "Village" -> <span class="text-green-400">ACTIVE!</span></li>
+                        </ul>
                     </div>
 
                     <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                        <h3 class="text-green-400 font-black mb-1 uppercase text-xs tracking-widest">3. The Duel</h3>
-                        <p class="text-sm">The player with the highest total of the <span class="text-yellow-400 font-bold">Boosted Stats</span> wins the round and takes the opponent's card.</p>
+                        <h3 class="text-green-400 font-black mb-1 uppercase text-xs tracking-widest">4. The Duel</h3>
+                        <p class="text-sm opacity-80">The player with the highest total of the <span class="text-yellow-400 font-bold">Boosted Stats</span> wins the round and takes the opponent's card.</p>
                     </div>
                 </div>
 
-                <button onclick="window.renderMainMenu()" class="mt-8 w-full py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 border border-white/10">
+                <button onclick="window.renderMainMenu()" class="mt-8 w-full py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 border border-white/10 shadow-lg">
                     ← Back to Menu
                 </button>
             </div>
