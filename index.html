@@ -241,36 +241,31 @@ const CARDS_DATA = [
 
 window.renderHowToPlay = () => {
     screen.innerHTML = `
-        <div class="max-w-2xl mx-auto animate-pop">
-            <div class="bg-slate-800 p-8 rounded-3xl border border-white/10 shadow-2xl relative">
-                <h2 class="text-3xl font-black italic mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                    HOW TO PLAY
+        <div class="max-w-2xl mx-auto animate-pop px-4">
+            <div class="bg-slate-800 p-8 rounded-3xl border border-white/10 shadow-2xl relative text-center">
+                <h2 class="text-3xl font-black italic mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 uppercase">
+                    How to Play
                 </h2>
                 
                 <div class="space-y-6 text-left text-slate-300">
-                    <section>
-                        <h3 class="text-white font-bold mb-1 uppercase text-xs tracking-widest">1. The Draft</h3>
-                        <p class="text-sm">Players take turns picking cards from the central pool until both have a hand of 4 cards.</p>
-                    </section>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                        <h3 class="text-blue-400 font-black mb-1 uppercase text-xs tracking-widest">1. The Draft</h3>
+                        <p class="text-sm">Pick 4 cards from the pool. Choose wisely based on their attribute stats!</p>
+                    </div>
 
-                    <section>
-                        <h3 class="text-white font-bold mb-1 uppercase text-xs tracking-widest">2. The Battlefield</h3>
-                        <p class="text-sm">Each round features a unique battlefield (Nature or Village). Battlefields boost 3 specific attributes (e.g., Strength, Speed, Agility).</p>
-                    </section>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                        <h3 class="text-purple-400 font-black mb-1 uppercase text-xs tracking-widest">2. Battlefield Boosts</h3>
+                        <p class="text-sm">Each round has a Battlefield that boosts 3 stats (e.g., Speed, Tech). These stats turn <span class="text-yellow-400 font-bold">Yellow and Pulse</span>.</p>
+                    </div>
 
-                    <section>
-                        <h3 class="text-white font-bold mb-1 uppercase text-xs tracking-widest">3. Card Types & Specials</h3>
-                        <p class="text-sm">If your card type matches the Battlefield type, its <span class="text-yellow-500">Special Ability</span> activates! Hover over cards to see their stats.</p>
-                    </section>
-
-                    <section>
-                        <h3 class="text-white font-bold mb-1 uppercase text-xs tracking-widest">4. Winning</h3>
-                        <p class="text-sm">The higher combined score of the 3 boosted attributes wins. The winner takes the loser's card. Deplete your opponent's hand to win the match!</p>
-                    </section>
+                    <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+                        <h3 class="text-green-400 font-black mb-1 uppercase text-xs tracking-widest">3. The Duel</h3>
+                        <p class="text-sm">The player with the highest total of the <span class="text-yellow-400 font-bold">Boosted Stats</span> wins the round and takes the opponent's card.</p>
+                    </div>
                 </div>
 
-                <button onclick="renderMainMenu()" class="mt-8 w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold transition-all">
-                    BACK TO MENU
+                <button onclick="window.renderMainMenu()" class="mt-8 w-full py-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black uppercase tracking-widest transition-all active:scale-95 border border-white/10">
+                    ← Back to Menu
                 </button>
             </div>
         </div>
@@ -430,26 +425,30 @@ function updateEnvironment() {
             }
         }
 
-        function renderMainMenu() {
+        window.renderMainMenu = () => {
     screen.innerHTML = `
         <div class="text-center py-12">
             <div class="bg-slate-800 p-10 rounded-3xl border border-white/10 shadow-2xl">
-                <h2 class="text-2xl font-bold mb-6">Ready for Battle?</h2>
+                <h2 class="text-2xl font-bold mb-6 italic tracking-tighter uppercase">Ready for Battle?</h2>
                 <div class="flex flex-col items-center gap-4">
-                    <button id="find-match-btn" class="w-full max-w-xs px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full font-black text-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20">
-                        FIND ONLINE MATCH
+                    <button id="find-match-btn" class="w-full max-w-xs px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full font-black text-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20 uppercase italic">
+                        Find Online Match
                     </button>
                     
-                    <button onclick="renderHowToPlay()" class="text-slate-400 hover:text-white text-sm font-bold tracking-widest uppercase transition-colors">
+                    <button onclick="renderHowToPlay()" class="text-slate-500 hover:text-white text-xs font-black tracking-[0.2em] uppercase transition-colors">
                         ? How to Play
                     </button>
                 </div>
             </div>
         </div>
     `;
-    document.getElementById('find-match-btn').onclick = startMatchmaking;
+    // We use setTimeout to ensure the DOM is ready before attaching the ID-based listener
+    setTimeout(() => {
+        const btn = document.getElementById('find-match-btn');
+        if (btn) btn.onclick = startMatchmaking;
+    }, 0);
     statusText.innerText = "Connect with a player to begin.";
-}
+};
 
         function renderWaitingForOpponent() {
             statusText.innerText = "WAITING FOR OPPONENT";
