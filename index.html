@@ -829,7 +829,7 @@ function updateEnvironment() {
         }
     });
 
-    let nextStatus = newPlayers[loserIdx].hand.length === 0 ? 'finished' : 'battle_result';
+    let nextStatus = 'battle_result';
 
     try {
         const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
