@@ -890,21 +890,21 @@ function updateEnvironment() {
                 </div>
             </div>
 
-            <div class="text-center animate-pop" style="animation-delay: 1.8s">
-                <div class="text-3xl font-black text-white mb-8 tracking-wide">
-                    PLAYER ${res.winnerIdx + 1} WINS THE ROUND!
-                </div>
-                
-                ${playerRole === 'p0' ? `
-                    <button onclick="nextRound()" class="group relative bg-blue-600 hover:bg-blue-500 text-white px-16 py-5 rounded-full font-black shadow-xl transition-all hover:scale-110 active:scale-95">
-                        <span class="relative z-10">CONTINUE JOURNEY →</span>
-                        <div class="absolute inset-0 rounded-full bg-blue-400 blur-lg opacity-0 group-hover:opacity-40 transition-opacity"></div>
-                    </button>
-                ` : `
-                    <div class="inline-flex items-center gap-3 bg-slate-800/80 px-8 py-4 rounded-full border border-white/5">
-                        <div class="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
-                        <span class="text-slate-400 font-bold text-sm tracking-tighter">WAITING FOR HOST...</span>
-                    </div>
+            <div class="text-center animate-pop" style="animation-delay: 1s">
+    <div class="text-3xl font-black text-white mb-8 uppercase">
+        PLAYER ${res.winnerIdx + 1} WINS THE ROUND!
+    </div>
+    
+    ${playerRole === 'p0' ? `
+        <button onclick="nextRound()" class="bg-blue-600 hover:bg-blue-500 text-white px-16 py-5 rounded-full font-black shadow-xl transition-all hover:scale-110 uppercase tracking-widest">
+            ${(gameData.players[0].hand.length === 0 || gameData.players[1].hand.length === 0) ? 'Finish Match' : 'Next Battle →'}
+        </button>
+    ` : `
+        <div class="bg-slate-800/80 px-8 py-4 rounded-full border border-white/5 inline-block">
+            <span class="text-slate-400 font-bold text-sm tracking-tighter animate-pulse">WAITING FOR HOST...</span>
+        </div>
+    `}
+</div>
                 `}
             </div>
         </div>
@@ -912,17 +912,30 @@ function updateEnvironment() {
 }
 
         window.nextRound = async () => {
-            const winnerIdx = gameData.battleResults.winnerIdx;
-            const newActive = [null, null];
-            newActive[winnerIdx] = gameData.activeCards[winnerIdx];
+    const winnerIdx = gameData.battleResults.winnerIdx;
+    
+    // Check if either player has 0 cards left in hand
+    const p0HandEmpty = gameData.players[0].hand.length === 0;
+    const p1HandEmpty = gameData.players[1].hand.length === 0;
 
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                status: 'battle_selection',
-                activeCards: newActive,
-                battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)],
-                battleResults: null
-            });
-        };
+    if (p0HandEmpty || p1HandEmpty) {
+        // Someone is out of cards! Transition to the final win screen
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+            status: 'finished'
+        });
+    } else {
+        // Game continues as normal
+        const newActive = [null, null];
+        newActive[winnerIdx] = gameData.activeCards[winnerIdx];
+
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+            status: 'battle_selection',
+            activeCards: newActive,
+            battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)],
+            battleResults: null
+        });
+    }
+};
 
         function renderEndGame() {
             const winnerIdx = gameData.battleResults.winnerIdx;
