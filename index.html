@@ -312,8 +312,11 @@ window.renderEndGame = () => {
         // --- AUTHENTICATION ---
 onAuthStateChanged(auth, (user) => {
     const authOverlay = document.getElementById('auth-overlay');
-    if (user) {
+    
+    // Check if user exists AND has an email (not anonymous)
+    if (user && user.email) {
         currentUser = user;
+        
         // Hide the login screen
         authOverlay.classList.add('hidden');
         
@@ -323,8 +326,13 @@ onAuthStateChanged(auth, (user) => {
         // Load the menu
         window.renderMainMenu();
     } else {
-        // Show login screen if not logged in
+        // If it's an anonymous user or no user at all, ensure they are signed out
+        if (user && !user.email) {
+            signOut(auth); // Clear out the old 'Anonymous' session
+        }
+        
         currentUser = null;
+        userInfo.innerText = "Please Sign In";
         authOverlay.classList.remove('hidden');
     }
 });
