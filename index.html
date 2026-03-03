@@ -413,7 +413,9 @@ window.renderCardLibrary = () => {
                                             LVL ${card.level || 1}
                                         </div>
                                         <img src="${card.image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-2">
-                                        <div class="text-center font-bold text-xs truncate uppercase tracking-tighter mb-3">${card.name}</div>
+                                        <div class="text-center font-black text-[11px] leading-tight uppercase tracking-tighter mb-3 min-h-[2rem] flex items-center justify-center">
+    ${card.name}
+</div>
                                         <div class="space-y-1 flex-grow">
                                             ${Object.entries(card.stats).map(([key, val]) => `
                                                 <div class="flex justify-between text-[9px] border-b border-white/5 pb-0.5">
