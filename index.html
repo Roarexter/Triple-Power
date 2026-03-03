@@ -367,6 +367,18 @@ window.toggleFlip = (el) => {
 };
 
 window.renderCardLibrary = () => {
+    // Mapping your special rules to their descriptions
+    const specialDefinitions = {
+        "Focused Training": "Add 5 to the card's weakest overall attribute (even if not in the battlefield).",
+        "Underdog Mentality": "For every level higher the opponent is, add 2 to your attribute total.",
+        "Set My Own Rules": "Your best non-battlefield attribute is added to the total (adds the same for the opponent).",
+        "Reinforcements": "For every card of the same type in your hand, add 1 to the attribute total.",
+        "Battle Ready": "Every attribute increases by 1 point for this round.",
+        "Rescue Mission": "Subtract 3 from your total, but regain the last card you lost if you win.",
+        "Bonus Training": "Add 5 to the card's strongest overall attribute (even if not in the battlefield).",
+        "Narrow It Down": "The weakest battlefield attribute for this card is ignored for both players."
+    };
+
     const groupedByType = CARDS_DATA.reduce((acc, card) => {
         if (!acc[card.type]) acc[card.type] = [];
         acc[card.type].push(card);
@@ -377,7 +389,7 @@ window.renderCardLibrary = () => {
         <div class="space-y-12 animate-pop pb-20 max-w-7xl mx-auto px-4">
             <div class="text-center">
                 <h2 class="text-5xl font-black italic mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 uppercase tracking-tighter">Card Library</h2>
-                <p class="text-slate-400 text-sm italic">Click a card to reveal its secret ability</p>
+                <p class="text-slate-400 text-sm italic">Click a card to reveal the mechanics of its Special Ability</p>
             </div>
 
             ${Object.entries(groupedByType).map(([type, cards]) => `
@@ -388,7 +400,11 @@ window.renderCardLibrary = () => {
                     </div>
 
                     <div class="flex flex-wrap gap-6 justify-start">
-                        ${cards.sort((a, b) => (a.level || 0) - (b.level || 0)).map(card => `
+                        ${cards.sort((a, b) => (a.level || 0) - (b.level || 0)).map(card => {
+                            // Find the definition or use a fallback
+                            const definition = specialDefinitions[card.special] || "Special ability details coming soon.";
+                            
+                            return `
                             <div class="card-flipper-container w-44">
                                 <div class="card-flipper-inner" onclick="window.toggleFlip(this)">
                                     
@@ -406,24 +422,29 @@ window.renderCardLibrary = () => {
                                                 </div>
                                             `).join('')}
                                         </div>
-                                        <div class="mt-3 text-[8px] text-center text-slate-500 uppercase font-black tracking-widest">Click to Flip</div>
+                                        <div class="mt-3 text-[8px] text-center text-slate-400 uppercase font-black tracking-widest animate-pulse">Click to Flip</div>
                                     </div>
 
-                                    <div class="card-back bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 border-2 border-yellow-500/30 shadow-2xl flex flex-col justify-center items-center text-center">
-                                        <div class="text-yellow-500 text-3xl mb-4">✨</div>
-                                        <h4 class="text-white font-black uppercase text-xs tracking-tighter mb-2">Special Ability</h4>
-                                        <p class="text-yellow-400 font-bold text-sm mb-4 leading-tight italic">
-                                            "${card.special}"
+                                    <div class="card-back bg-gradient-to-br from-slate-900 to-black rounded-2xl p-6 border-2 border-blue-500/30 shadow-2xl flex flex-col items-center text-center">
+                                        <div class="text-blue-400 text-3xl mb-2">✨</div>
+                                        <h4 class="text-white font-black uppercase text-[10px] tracking-widest mb-1">${card.special}</h4>
+                                        <div class="h-px w-8 bg-blue-500/50 mb-4"></div>
+                                        
+                                        <p class="text-slate-200 text-[11px] leading-relaxed italic mb-4">
+                                            "${definition}"
                                         </p>
-                                        <div class="text-[10px] text-slate-400 leading-relaxed border-t border-white/10 pt-4">
-                                            This ability activates automatically when the Card Type matches the Battlefield Type.
+                                        
+                                        <div class="mt-auto p-2 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                                            <p class="text-[9px] text-blue-300 leading-tight">
+                                                Active when Battlefield matches <strong>${card.type}</strong>.
+                                            </p>
                                         </div>
-                                        <div class="mt-auto text-[8px] text-slate-500 uppercase font-black tracking-widest">Click to Return</div>
+                                        <div class="mt-4 text-[8px] text-slate-500 uppercase font-black tracking-widest">Click to Return</div>
                                     </div>
 
                                 </div>
                             </div>
-                        `).join('')}
+                        `}).join('')}
                     </div>
                 </div>
             `).join('')}
