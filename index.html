@@ -436,62 +436,6 @@ window.renderCardLibrary = () => {
         </div>
     `;
 };
-
-    screen.innerHTML = `
-        <div class="space-y-12 animate-pop pb-20 max-w-7xl mx-auto px-4">
-            <div class="text-center">
-                <h2 class="text-5xl font-black italic mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 uppercase tracking-tighter">Card Library</h2>
-                <p class="text-slate-400 text-sm italic">Warriors categorized by Allegiance and Power Level</p>
-            </div>
-
-            ${Object.entries(groupedByType).map(([type, cards]) => `
-                <div class="space-y-6">
-                    <div class="flex items-center gap-4">
-                        <h3 class="text-2xl font-black uppercase tracking-widest text-white">${type} Cards</h3>
-                        <div class="h-px flex-grow bg-gradient-to-r from-white/20 to-transparent"></div>
-                    </div>
-
-                    <div class="flex flex-wrap gap-6 justify-start">
-                        ${cards
-                            // 2. Updated sorting to use 'level' instead of 'lvl'
-                            .sort((a, b) => (a.level || 0) - (b.level || 0))
-                            .map(card => `
-                            <div class="floating-card relative group w-44">
-                                <div class="bg-slate-800 rounded-2xl p-4 border-2 border-white/5 group-hover:border-blue-500/50 transition-all shadow-xl h-full flex flex-col">
-                                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-blue-600 text-[10px] font-black text-white uppercase border border-white/20 z-10">
-                                        LVL ${card.level || 1}
-                                    </div>
-                                    
-                                    <img src="${card.image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-2 group-hover:scale-110 transition-transform">
-                                    <div class="text-center font-bold text-xs truncate uppercase tracking-tighter mb-3">${card.name}</div>
-                                    
-                                    <div class="space-y-1 flex-grow mb-3">
-                                        ${Object.entries(card.stats).map(([key, val]) => `
-                                            <div class="flex justify-between text-[9px] border-b border-white/5 pb-0.5">
-                                                <span class="capitalize text-slate-500">${key}</span>
-                                                <span class="font-bold text-slate-200">${val}</span>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                    
-                                    <div class="p-2 bg-black/40 rounded-lg text-[9px] text-center italic text-yellow-500 leading-tight border border-yellow-500/10">
-                                        ✨ ${card.special}
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('')}
-
-            <div class="text-center mt-12">
-                <button onclick="window.renderMainMenu()" class="px-16 py-5 bg-slate-700 hover:bg-slate-600 text-white rounded-full font-black uppercase tracking-widest transition-all active:scale-95 border border-white/10 shadow-2xl">
-                    ← Back to Menu
-                </button>
-            </div>
-        </div>
-    `;
-};
         
 function updateBackgroundTheme() {
     if (!gameData || !gameData.battlefield) {
