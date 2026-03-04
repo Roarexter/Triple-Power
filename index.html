@@ -256,10 +256,11 @@ const CARDS_DATA = [
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'triplepower-default';
 
         // Local State
-        let currentUser = null;
-        let gameId = null;
-        let gameData = null;
-        let playerRole = null; // 'p0' or 'p1'
+let currentUser = null;
+let userData = { xp: 0, unlockedCards: [] }; // New dedicated object
+let gameId = null;
+let gameData = null;
+let playerRole = null; // 'p0' or 'p1'
 
         const screen = document.getElementById('game-screen');
         const statusText = document.getElementById('game-status');
@@ -322,12 +323,10 @@ onAuthStateChanged(auth, async (user) => {
         const userSnap = await getDoc(userDocRef);
         
         if (!userSnap.exists()) {
-            // Pick 4 random cards to unlock for new users
             const shuffled = [...CARDS_DATA].sort(() => 0.5 - Math.random());
             const unlocked = shuffled.slice(0, 4).map(c => c.id);
             
-            currentUser.xp = 0;
-            currentUser.unlockedCards = unlocked; // Local reference
+            userData = { xp: 0, unlockedCards: unlocked };
             await setDoc(userDocRef, { 
                 xp: 0, 
                 unlockedCards: unlocked,
@@ -335,8 +334,10 @@ onAuthStateChanged(auth, async (user) => {
             });
         } else {
             const data = userSnap.data();
-            currentUser.xp = data.xp || 0;
-            currentUser.unlockedCards = data.unlockedCards || [];
+            userData = {
+                xp: data.xp || 0,
+                unlockedCards: data.unlockedCards || []
+            };
         }
 
         authOverlay.classList.add('hidden');
@@ -344,6 +345,7 @@ onAuthStateChanged(auth, async (user) => {
         window.renderMainMenu();
     } else {
         currentUser = null;
+        userData = { xp: 0, unlockedCards: [] };
         authOverlay.classList.remove('hidden');
         screen.innerHTML = '';
         statusText.innerText = "Connect with a player to begin.";
@@ -699,16 +701,16 @@ function updateEnvironment() {
             uid: currentUser.uid, 
             name: currentUser.displayName || "Player 1", 
             hand: [], 
-            pool: currentUser.unlockedCards // P1's available cards
+            pool: userData.unlockedCards // Use userData here
         }, 
         { 
             uid: null, 
             name: "Waiting...", 
             hand: [], 
-            pool: [] // Will be filled when P2 joins
+            pool: [] 
         }
     ],
-    draftOrder: [0, 1, 1, 0], // Each player picks twice
+    draftOrder: [0, 1, 1, 0],
     draftStep: 0,
     activeCards: [null, null],
     battlefield: null,
@@ -728,7 +730,7 @@ function updateEnvironment() {
     
     data.players[1].uid = currentUser.uid;
     data.players[1].name = currentUser.displayName || "Player 2";
-    data.players[1].pool = currentUser.unlockedCards; // Load P2's unlocks
+    data.players[1].pool = userData.unlockedCards; // Use userData here
     
     await updateDoc(gameRef, { players: data.players });
     watchGame(id);
@@ -853,17 +855,21 @@ function updateEnvironment() {
     const isMyTurn = (pIndex === 0 && playerRole === 'p0') || (pIndex === 1 && playerRole === 'p1');
     const myPlayer = playerRole === 'p0' ? gameData.players[0] : gameData.players[1];
     
+    // Safety check: ensure pool exists
+    const myPool = myPlayer.pool || [];
+    const myUnlocked = userData.unlockedCards || [];
+
     statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT TO PICK";
 
     screen.innerHTML = `
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             ${CARDS_DATA.map((card) => {
-                const isUnlocked = currentUser.unlockedCards.includes(card.id);
-                const isStillInPool = myPlayer.pool.includes(card.id);
+                const isUnlocked = myUnlocked.includes(card.id);
+                const isStillInPool = myPool.includes(card.id);
                 
                 // If unlocked but not in pool, it means it was already picked
                 if (isUnlocked && !isStillInPool) {
-                    return `<div class="w-full h-32 bg-slate-900/20 rounded-lg border border-dashed border-white/5"></div>`;
+                    return `<div class="w-full h-32 bg-slate-900/10 rounded-lg border border-dashed border-white/5 flex items-center justify-center text-[8px] text-slate-700 uppercase font-black">Picked</div>`;
                 }
 
                 const canPick = isMyTurn && isUnlocked && isStillInPool;
@@ -873,7 +879,7 @@ function updateEnvironment() {
                     <div onclick="${canPick ? `pickCard('${card.id}')` : ''}" 
                          class="gradient-border transition-all shadow-md 
                          ${!isUnlocked ? 'opacity-20 grayscale cursor-not-allowed' : ''} 
-                         ${canPick ? 'cursor-pointer hover:-translate-y-1' : 'opacity-50 grayscale'}">
+                         ${canPick ? 'cursor-pointer hover:-translate-y-1' : 'opacity-40 grayscale'}">
                         <div class="bg-slate-800 p-2 rounded-lg h-full flex flex-col">
                             <div class="flex justify-between items-start mb-1">
                                 <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${card.type}</span>
