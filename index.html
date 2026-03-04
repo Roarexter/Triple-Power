@@ -423,7 +423,7 @@ window.renderHowToPlay = () => {
                 <div class="space-y-4 text-left text-slate-300">
                     <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
                         <h3 class="text-blue-400 font-black mb-1 uppercase text-xs tracking-widest">1. The Draft</h3>
-                        <p class="text-sm opacity-80">Pick 4 cards from the pool. Choose wisely based on their attribute stats!</p>
+                        <p class="text-sm opacity-80">Pick 2 cards from the pool. Choose wisely based on their attribute stats!</p>
                     </div>
 
                     <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5">
@@ -691,7 +691,7 @@ function updateEnvironment() {
     { uid: null, name: "Waiting...", hand: [] }
 ],
                     pool: [...CARDS_DATA].sort(() => Math.random() - 0.5),
-                    draftOrder: [0, 1, 1, 0, 0, 1, 1, 0],
+                    draftOrder: [0, 1, 1, 0],
                     draftStep: 0,
                     activeCards: [null, null],
                     battlefield: null,
