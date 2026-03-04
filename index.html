@@ -318,21 +318,29 @@ onAuthStateChanged(auth, async (user) => {
     if (user && user.email) {
         currentUser = user;
         
-        // Fetch or Initialize User Data from Firestore
         const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
         const userSnap = await getDoc(userDocRef);
         
         if (!userSnap.exists()) {
-            // New user initialization
+            // Pick 4 random cards to unlock for new users
+            const shuffled = [...CARDS_DATA].sort(() => 0.5 - Math.random());
+            const unlocked = shuffled.slice(0, 4).map(c => c.id);
+            
             currentUser.xp = 0;
-            await setDoc(userDocRef, { xp: 0, name: user.displayName || user.email.split('@')[0] });
+            currentUser.unlockedCards = unlocked; // Local reference
+            await setDoc(userDocRef, { 
+                xp: 0, 
+                unlockedCards: unlocked,
+                name: user.displayName || user.email.split('@')[0] 
+            });
         } else {
-            currentUser.xp = userSnap.data().xp || 0;
+            const data = userSnap.data();
+            currentUser.xp = data.xp || 0;
+            currentUser.unlockedCards = data.unlockedCards || [];
         }
 
         authOverlay.classList.add('hidden');
-        const displayName = user.displayName || user.email.split('@')[0];
-        userInfo.innerText = `Logged in as: ${displayName}`;
+        userInfo.innerText = `Logged in as: ${user.displayName || user.email.split('@')[0]}`;
         window.renderMainMenu();
     } else {
         currentUser = null;
@@ -687,16 +695,25 @@ function updateEnvironment() {
     status: 'drafting',
     createdAt: Date.now(),
     players: [
-    { uid: currentUser.uid, name: currentUser.displayName || "Player 1", hand: [] }, 
-    { uid: null, name: "Waiting...", hand: [] }
-],
-                    pool: [...CARDS_DATA].sort(() => Math.random() - 0.5),
-                    draftOrder: [0, 1, 1, 0],
-                    draftStep: 0,
-                    activeCards: [null, null],
-                    battlefield: null,
-                    battleResults: null
-                };
+        { 
+            uid: currentUser.uid, 
+            name: currentUser.displayName || "Player 1", 
+            hand: [], 
+            pool: currentUser.unlockedCards // P1's available cards
+        }, 
+        { 
+            uid: null, 
+            name: "Waiting...", 
+            hand: [], 
+            pool: [] // Will be filled when P2 joins
+        }
+    ],
+    draftOrder: [0, 1, 1, 0], // Each player picks twice
+    draftStep: 0,
+    activeCards: [null, null],
+    battlefield: null,
+    battleResults: null
+};
 
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), newGame);
                 await setDoc(lobbyRef, { gameId, hostId: currentUser.uid, status: 'waiting' });
@@ -708,10 +725,10 @@ function updateEnvironment() {
     const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', id);
     const snap = await getDoc(gameRef);
     let data = snap.data();
-    data.players[1].uid = currentUser.uid;
     
-    // ADD THIS LINE HERE:
+    data.players[1].uid = currentUser.uid;
     data.players[1].name = currentUser.displayName || "Player 2";
+    data.players[1].pool = currentUser.unlockedCards; // Load P2's unlocks
     
     await updateDoc(gameRef, { players: data.players });
     watchGame(id);
@@ -832,62 +849,74 @@ function updateEnvironment() {
         }
 
         function renderDraft() {
-            const pIndex = gameData.draftOrder[gameData.draftStep];
-            const isMyTurn = (pIndex === 0 && playerRole === 'p0') || (pIndex === 1 && playerRole === 'p1');
-            
-            statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT TO PICK";
+    const pIndex = gameData.draftOrder[gameData.draftStep];
+    const isMyTurn = (pIndex === 0 && playerRole === 'p0') || (pIndex === 1 && playerRole === 'p1');
+    const myPlayer = playerRole === 'p0' ? gameData.players[0] : gameData.players[1];
+    
+    statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT TO PICK";
 
-            screen.innerHTML = `
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        ${gameData.pool.map((card, idx) => `
-            <div class="card-container">
-                <div onclick="${isMyTurn ? `pickCard(${idx})` : ''}" class="gradient-border ${isMyTurn ? 'cursor-pointer hover:-translate-y-1' : 'opacity-50 grayscale cursor-not-allowed'} transition-all shadow-md">
-                    <div class="bg-slate-800 p-2 rounded-lg h-full flex flex-col">
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${card.type}</span>
-                            <span class="text-[8px] font-bold text-yellow-500">LVL ${card.level}</span>
+    screen.innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            ${CARDS_DATA.map((card) => {
+                const isUnlocked = currentUser.unlockedCards.includes(card.id);
+                const isStillInPool = myPlayer.pool.includes(card.id);
+                
+                // If unlocked but not in pool, it means it was already picked
+                if (isUnlocked && !isStillInPool) {
+                    return `<div class="w-full h-32 bg-slate-900/20 rounded-lg border border-dashed border-white/5"></div>`;
+                }
+
+                const canPick = isMyTurn && isUnlocked && isStillInPool;
+
+                return `
+                <div class="card-container">
+                    <div onclick="${canPick ? `pickCard('${card.id}')` : ''}" 
+                         class="gradient-border transition-all shadow-md 
+                         ${!isUnlocked ? 'opacity-20 grayscale cursor-not-allowed' : ''} 
+                         ${canPick ? 'cursor-pointer hover:-translate-y-1' : 'opacity-50 grayscale'}">
+                        <div class="bg-slate-800 p-2 rounded-lg h-full flex flex-col">
+                            <div class="flex justify-between items-start mb-1">
+                                <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${card.type}</span>
+                                <span class="text-[8px] font-bold text-yellow-500">LVL ${card.level}</span>
+                            </div>
+                            <img src="${card.image}" class="w-full h-24 object-contain bg-slate-900/50 rounded mb-1.5 border border-white/5">
+                            <h3 class="font-bold text-[11px] truncate leading-tight">${card.name}</h3>
+                            <p class="text-[8px] text-slate-500 mt-0.5 italic truncate">${isUnlocked ? card.special : 'LOCKED'}</p>
                         </div>
-                        
-                        <img src="${card.image}" class="w-full h-24 object-contain bg-slate-900/50 rounded mb-1.5 border border-white/5" alt="${card.name}">
-                        
-                        <h3 class="font-bold text-[11px] truncate leading-tight">${card.name}</h3>
-                        <p class="text-[8px] text-slate-500 mt-0.5 italic truncate">${card.special}</p>
                     </div>
-                </div>
-                ${createStatsHTML(card.stats)}
-            </div>
-        `).join('')}
-    </div>
-`;
-        }
+                    ${isUnlocked ? createStatsHTML(card.stats) : ''}
+                </div>`;
+            }).join('')}
+        </div>
+    `;
+}
 
-        window.pickCard = async (idx) => {
-            const pIdx = gameData.draftOrder[gameData.draftStep];
-            const card = gameData.pool[idx];
-            
-            const newPool = [...gameData.pool];
-            newPool.splice(idx, 1);
-            
-            const newPlayers = [...gameData.players];
-            newPlayers[pIdx].hand.push(card);
+        window.pickCard = async (cardId) => {
+    const pIdx = gameData.draftOrder[gameData.draftStep];
+    const card = CARDS_DATA.find(c => c.id === cardId);
+    
+    const newPlayers = [...gameData.players];
+    // Remove card from this player's pool
+    newPlayers[pIdx].pool = newPlayers[pIdx].pool.filter(id => id !== cardId);
+    // Add card to this player's hand
+    newPlayers[pIdx].hand.push(card);
 
-            const nextStep = gameData.draftStep + 1;
-            let nextStatus = 'drafting';
-            let nextBattlefield = null;
+    const nextStep = gameData.draftStep + 1;
+    let nextStatus = 'drafting';
+    let nextBattlefield = null;
 
-            if (nextStep >= gameData.draftOrder.length) {
-                nextStatus = 'battle_selection';
-                nextBattlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
-            }
+    if (nextStep >= gameData.draftOrder.length) {
+        nextStatus = 'battle_selection';
+        nextBattlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
+    }
 
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                pool: newPool,
-                players: newPlayers,
-                draftStep: nextStep,
-                status: nextStatus,
-                battlefield: nextBattlefield
-            });
-        };
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+        players: newPlayers,
+        draftStep: nextStep,
+        status: nextStatus,
+        battlefield: nextBattlefield
+    });
+};
 
         function renderBattleSelection() {
             const myIdx = playerRole === 'p0' ? 0 : 1;
