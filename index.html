@@ -368,7 +368,14 @@ window.handleAuth = async (type) => {
 };
 
 // Add a global logout function for your menu
-window.logout = () => signOut(auth);
+window.logout = async () => {
+    try {
+        await signOut(auth);
+        console.log("User signed out successfully");
+    } catch (error) {
+        console.error("Logout Error:", error);
+    }
+};
         
         // --- UI UTILS ---
         function createStatsHTML(stats) {
@@ -562,9 +569,9 @@ window.renderSettings = () => {
                         <div class="text-slate-500 text-[10px] font-bold">${currentUser.email}</div>
                     </div>
                 </div>
-                <button onclick="signOut(auth)" class="w-full py-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-black uppercase tracking-widest transition-all active:scale-95 border border-red-500/20">
-                    Sign Out
-                </button>
+                <button onclick="window.logout()" class="w-full py-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-black uppercase tracking-widest transition-all active:scale-95 border border-red-500/20">
+    Sign Out
+</button>
                 <button onclick="window.renderMainMenu()" class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black uppercase tracking-widest transition-all border border-white/5">
                     Return to Menu
                 </button>
