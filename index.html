@@ -316,16 +316,14 @@ window.renderEndGame = () => {
         // --- AUTHENTICATION ---
 onAuthStateChanged(auth, async (user) => {
     const authOverlay = document.getElementById('auth-overlay');
-    if (user && user.email) {
+    if (user) {
         currentUser = user;
-        
         const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
         const userSnap = await getDoc(userDocRef);
         
         if (!userSnap.exists()) {
             const shuffled = [...CARDS_DATA].sort(() => 0.5 - Math.random());
             const unlocked = shuffled.slice(0, 4).map(c => c.id);
-            
             userData = { xp: 0, unlockedCards: unlocked };
             await setDoc(userDocRef, { 
                 xp: 0, 
@@ -333,6 +331,7 @@ onAuthStateChanged(auth, async (user) => {
                 name: user.displayName || user.email.split('@')[0] 
             });
         } else {
+            // CRITICAL: Sync the global userData variable
             const data = userSnap.data();
             userData = {
                 xp: data.xp || 0,
@@ -347,8 +346,6 @@ onAuthStateChanged(auth, async (user) => {
         currentUser = null;
         userData = { xp: 0, unlockedCards: [] };
         authOverlay.classList.remove('hidden');
-        screen.innerHTML = '';
-        statusText.innerText = "Connect with a player to begin.";
     }
 });
 
@@ -770,7 +767,7 @@ function updateEnvironment() {
 
         window.renderMainMenu = () => {
     // ESCALATING XP CALCULATION
-    let tempXp = currentUser.xp || 0;
+    let tempXp = userData.xp || 0;
     let currentLevel = 1;
     let xpNeededForNext = 5;
 
@@ -855,31 +852,31 @@ function updateEnvironment() {
     const isMyTurn = (pIndex === 0 && playerRole === 'p0') || (pIndex === 1 && playerRole === 'p1');
     const myPlayer = playerRole === 'p0' ? gameData.players[0] : gameData.players[1];
     
-    // Safety check: ensure pool exists
+    // Use the pool directly from the Game Data in Firestore
     const myPool = myPlayer.pool || [];
-    const myUnlocked = userData.unlockedCards || [];
 
     statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT TO PICK";
 
     screen.innerHTML = `
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             ${CARDS_DATA.map((card) => {
-                const isUnlocked = myUnlocked.includes(card.id);
                 const isStillInPool = myPool.includes(card.id);
-                
-                // If unlocked but not in pool, it means it was already picked
-                if (isUnlocked && !isStillInPool) {
+                // A card is "Picked" if it's in your unlocked list but NO LONGER in the pool
+                const isAlreadyPicked = userData.unlockedCards.includes(card.id) && !isStillInPool;
+
+                if (isAlreadyPicked) {
                     return `<div class="w-full h-32 bg-slate-900/10 rounded-lg border border-dashed border-white/5 flex items-center justify-center text-[8px] text-slate-700 uppercase font-black">Picked</div>`;
                 }
 
-                const canPick = isMyTurn && isUnlocked && isStillInPool;
+                // If it's in the pool, it is pickable
+                const canPick = isMyTurn && isStillInPool;
 
                 return `
                 <div class="card-container">
-                    <div onclick="${canPick ? `pickCard('${card.id}')` : ''}" 
+                    <div onclick="${canPick ? `window.pickCard('${card.id}')` : ''}" 
                          class="gradient-border transition-all shadow-md 
-                         ${!isUnlocked ? 'opacity-20 grayscale cursor-not-allowed' : ''} 
-                         ${canPick ? 'cursor-pointer hover:-translate-y-1' : 'opacity-40 grayscale'}">
+                         ${!isStillInPool ? 'opacity-20 grayscale' : 'hover:-translate-y-1 cursor-pointer'} 
+                         ${!isMyTurn && isStillInPool ? 'opacity-60' : ''}">
                         <div class="bg-slate-800 p-2 rounded-lg h-full flex flex-col">
                             <div class="flex justify-between items-start mb-1">
                                 <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${card.type}</span>
@@ -887,10 +884,9 @@ function updateEnvironment() {
                             </div>
                             <img src="${card.image}" class="w-full h-24 object-contain bg-slate-900/50 rounded mb-1.5 border border-white/5">
                             <h3 class="font-bold text-[11px] truncate leading-tight">${card.name}</h3>
-                            <p class="text-[8px] text-slate-500 mt-0.5 italic truncate">${isUnlocked ? card.special : 'LOCKED'}</p>
                         </div>
                     </div>
-                    ${isUnlocked ? createStatsHTML(card.stats) : ''}
+                    ${isStillInPool ? createStatsHTML(card.stats) : ''}
                 </div>`;
             }).join('')}
         </div>
