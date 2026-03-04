@@ -159,7 +159,7 @@
         </div>
         
         <div class="space-y-4">
-            <input type="text" id="auth-username" placeholder="Choose a Username" class="w-full bg-slate-800 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
+            <input type="text" id="auth-username" placeholder="Username" class="w-full bg-slate-800 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
             
             <input type="email" id="auth-email" placeholder="Email Address" class="w-full bg-slate-800 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
             <input type="password" id="auth-password" placeholder="Password" class="w-full bg-slate-800 border border-white/10 rounded-xl px-5 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors">
@@ -268,13 +268,13 @@ const CARDS_DATA = [
         const logContainer = document.getElementById('log-container');
 
 window.renderEndGame = () => {
-    // 1. Determine who won based on cards remaining
     const winnerIdx = gameData.players[0].hand.length > gameData.players[1].hand.length ? 0 : 1;
-    
-    // 2. Identify the current player's index (p0 -> 0, p1 -> 1)
     const myIdx = playerRole === 'p0' ? 0 : 1;
     const isWinner = myIdx === winnerIdx;
     
+    // Add this line to trigger the XP reward
+    grantMatchXP(isWinner);
+
     screen.innerHTML = `
         <div class="text-center py-12 animate-pop">
             ${isWinner ? `
@@ -313,19 +313,31 @@ window.renderEndGame = () => {
 };
         
         // --- AUTHENTICATION ---
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
     const authOverlay = document.getElementById('auth-overlay');
     if (user && user.email) {
         currentUser = user;
+        
+        // Fetch or Initialize User Data from Firestore
+        const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', user.uid);
+        const userSnap = await getDoc(userDocRef);
+        
+        if (!userSnap.exists()) {
+            // New user initialization
+            currentUser.xp = 0;
+            await setDoc(userDocRef, { xp: 0, name: user.displayName || user.email.split('@')[0] });
+        } else {
+            currentUser.xp = userSnap.data().xp || 0;
+        }
+
         authOverlay.classList.add('hidden');
         const displayName = user.displayName || user.email.split('@')[0];
         userInfo.innerText = `Logged in as: ${displayName}`;
         window.renderMainMenu();
     } else {
-        // IF USER IS LOGGED OUT:
         currentUser = null;
-        authOverlay.classList.remove('hidden'); // Show the login screen
-        screen.innerHTML = ''; // Clear any leftover "Settings" or game UI
+        authOverlay.classList.remove('hidden');
+        screen.innerHTML = '';
         statusText.innerText = "Connect with a player to begin.";
     }
 });
@@ -738,41 +750,51 @@ function updateEnvironment() {
         }
 
         window.renderMainMenu = () => {
+    // Level System: 5 XP per level
+    const xpPerLevel = 5;
+    const currentLevel = Math.floor(currentUser.xp / xpPerLevel) + 1;
+    const progressInLevel = currentUser.xp % xpPerLevel;
+    const progressPercent = (progressInLevel / xpPerLevel) * 100;
+
     screen.innerHTML = `
-    <button onclick="window.renderSettings()" class="fixed top-6 right-6 p-3 bg-slate-800/50 hover:bg-slate-700 border border-white/10 rounded-2xl transition-all active:scale-90 group z-50">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-slate-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-        </button>
-        <div class="text-center py-12">
+        <div class="fixed top-6 right-6 flex items-center gap-4 z-50">
+            <div class="flex flex-col items-end">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Next Level</span>
+                    <span class="text-xs font-black text-blue-400">LVL ${currentLevel + 1}</span>
+                </div>
+                <div class="w-32 h-2 bg-slate-800 rounded-full border border-white/5 overflow-hidden shadow-inner">
+                    <div class="h-full bg-gradient-to-r from-blue-600 to-purple-500 transition-all duration-1000" 
+                         style="width: ${progressPercent}%">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="window.renderSettings()" class="p-3 bg-slate-800/50 hover:bg-slate-700 border border-white/10 rounded-2xl transition-all active:scale-90 group">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="text-center py-12 animate-pop">
             <div class="bg-slate-800 p-10 rounded-3xl border border-white/10 shadow-2xl">
+                <div class="text-blue-500 font-black text-sm uppercase tracking-widest mb-2">Rank ${currentLevel}</div>
                 <h2 class="text-2xl font-bold mb-6 italic tracking-tighter uppercase">Ready for Battle?</h2>
                 <div class="flex flex-col items-center gap-4">
                     <button id="find-match-btn" class="w-full max-w-xs px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full font-black text-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20 uppercase italic">
                         Find Online Match
                     </button>
-                    
-                    <div class="flex gap-6 mt-2">
-                        <button onclick="window.renderHowToPlay()" class="text-slate-500 hover:text-white text-xs font-black tracking-[0.2em] uppercase transition-colors">
-                            ? How to Play
-                        </button>
-                        <button onclick="window.renderCardLibrary()" class="text-slate-500 hover:text-white text-xs font-black tracking-[0.2em] uppercase transition-colors">
-                            🗂 Card Library
-                        </button>
                     </div>
-                </div>
             </div>
         </div>
     `;
-    // Re-attach the matchmaking listener
     setTimeout(() => {
         const btn = document.getElementById('find-match-btn');
         if (btn) btn.onclick = startMatchmaking;
     }, 0);
-    statusText.innerText = "Connect with a player to begin.";
 };
-
         function renderWaitingForOpponent() {
             statusText.innerText = "WAITING FOR OPPONENT";
             screen.innerHTML = `
@@ -1072,6 +1094,17 @@ function updateEnvironment() {
     }
 }
 
+async function grantMatchXP(isWinner) {
+    const xpToAdd = isWinner ? 3 : 1;
+    const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
+    
+    currentUser.xp += xpToAdd;
+    
+    await updateDoc(userDocRef, {
+        xp: currentUser.xp
+    });
+}
+        
         function renderResultUI() {
     const res = gameData.battleResults;
     
