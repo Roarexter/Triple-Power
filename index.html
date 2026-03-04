@@ -640,9 +640,9 @@ function updateEnvironment() {
     status: 'drafting',
     createdAt: Date.now(),
     players: [
-        { uid: currentUser.uid, name: currentUser.displayName || "Player 1", hand: [] }, // Updated name
-        { uid: null, name: "Waiting...", hand: [] }
-    ],
+    { uid: currentUser.uid, name: currentUser.displayName || "Player 1", hand: [] }, 
+    { uid: null, name: "Waiting...", hand: [] }
+],
                     pool: [...CARDS_DATA].sort(() => Math.random() - 0.5),
                     draftOrder: [0, 1, 1, 0, 0, 1, 1, 0],
                     draftStep: 0,
@@ -658,13 +658,17 @@ function updateEnvironment() {
         }
 
         async function joinGame(id) {
-            const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', id);
-            const snap = await getDoc(gameRef);
-            let data = snap.data();
-            data.players[1].uid = currentUser.uid;
-            await updateDoc(gameRef, { players: data.players });
-            watchGame(id);
-        }
+    const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', id);
+    const snap = await getDoc(gameRef);
+    let data = snap.data();
+    data.players[1].uid = currentUser.uid;
+    
+    // ADD THIS LINE HERE:
+    data.players[1].name = currentUser.displayName || "Player 2";
+    
+    await updateDoc(gameRef, { players: data.players });
+    watchGame(id);
+}
 
         function watchGame(id) {
             onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', id), (snapshot) => {
@@ -1036,6 +1040,8 @@ function updateEnvironment() {
     // Check if either player is out of cards to determine if this is the final round
     const isLastRound = gameData.players[0].hand.length === 0 || gameData.players[1].hand.length === 0;
 
+const winnerName = gameData.players[res.winnerIdx].name || `Player ${res.winnerIdx + 1}`;
+            
     screen.innerHTML = `
         <div class="space-y-8 max-w-4xl mx-auto px-4">
             <div class="text-center animate-pop">
@@ -1048,7 +1054,9 @@ function updateEnvironment() {
             <div class="flex justify-between items-center gap-4 mb-8 overflow-hidden py-4">
                 <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 animate-slide-left animate-clash-shake 
                     ${res.winnerIdx === 0 ? 'border-green-500 animate-winner-ready shadow-2xl shadow-green-500/20' : 'border-slate-700 opacity-40'}">
-                    
+                    <div class="text-[10px] font-black text-blue-400 mb-1 uppercase tracking-widest">
+    ${gameData.players[0].name}
+</div>
                     <img src="${gameData.activeCards[0].image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-3 border border-white/5">
                     <div class="text-center font-bold mb-1 opacity-50 text-[10px] uppercase tracking-widest">${gameData.activeCards[0].name}</div>
                     
@@ -1067,7 +1075,9 @@ function updateEnvironment() {
 
                 <div class="flex-1 bg-slate-800 p-4 rounded-2xl border-4 animate-slide-right animate-clash-shake 
                     ${res.winnerIdx === 1 ? 'border-green-500 animate-winner-ready shadow-2xl shadow-green-500/20' : 'border-slate-700 opacity-40'}">
-                    
+                    <div class="text-[10px] font-black text-purple-400 mb-1 uppercase tracking-widest">
+    ${gameData.players[1].name}
+</div>
                     <img src="${gameData.activeCards[1].image}" class="w-full h-32 object-contain bg-slate-900/50 rounded-xl mb-3 border border-white/5">
                     <div class="text-center font-bold mb-1 opacity-50 text-[10px] uppercase tracking-widest">${gameData.activeCards[1].name}</div>
                     
@@ -1085,17 +1095,17 @@ function updateEnvironment() {
 
             <div class="text-center animate-pop" style="animation-delay: 1s">
                 <div class="text-3xl font-black text-white mb-8 uppercase">
-                    PLAYER ${res.winnerIdx + 1} WINS THE ROUND!
-                </div>
+    ${winnerName} WINS THE ROUND!
+</div>
                 
                 ${playerRole === 'p0' ? `
                     <button onclick="nextRound()" class="bg-blue-600 hover:bg-blue-500 text-white px-16 py-5 rounded-full font-black shadow-xl transition-all hover:scale-110 uppercase tracking-widest">
                         ${isLastRound ? 'Finish Match' : 'Next Battle →'}
                     </button>
                 ` : `
-                    <div class="bg-slate-800/80 px-8 py-4 rounded-full border border-white/5 inline-block">
-                        <span class="text-slate-400 font-bold text-sm tracking-tighter animate-pulse">WAITING FOR HOST...</span>
-                    </div>
+                    <span class="text-slate-400 font-bold text-sm tracking-tighter animate-pulse">
+    WAITING FOR ${gameData.players[0].name.toUpperCase()}...
+</span>
                 `}
             </div>
         </div>
