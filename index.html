@@ -269,11 +269,15 @@ let playerRole = null; // 'p0' or 'p1'
         const logContainer = document.getElementById('log-container');
 
 window.renderEndGame = () => {
-    const winnerIdx = gameData.players[0].hand.length > gameData.players[1].hand.length ? 0 : 1;
+    // Determine winner based on who has the most cards in hand
+    const p0Cards = gameData.players[0].hand.length;
+    const p1Cards = gameData.players[1].hand.length;
+    
+    const winnerIdx = p0Cards > p1Cards ? 0 : 1;
     const myIdx = playerRole === 'p0' ? 0 : 1;
     const isWinner = myIdx === winnerIdx;
     
-    // Add this line to trigger the XP reward
+    // Trigger the XP reward
     grantMatchXP(isWinner);
 
     screen.innerHTML = `
@@ -1136,14 +1140,26 @@ function updateEnvironment() {
 }
 
 async function grantMatchXP(isWinner) {
+    if (!currentUser) return;
+
+    // 1. Calculate the new XP based on match result
     const xpToAdd = isWinner ? 3 : 1;
+    const newTotalXP = (userData.xp || 0) + xpToAdd;
+
+    // 2. Update the local userData object immediately for UI responsiveness
+    userData.xp = newTotalXP;
+
+    // 3. Update the Firestore document for the specific user
     const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
     
-    currentUser.xp += xpToAdd;
-    
-    await updateDoc(userDocRef, {
-        xp: currentUser.xp
-    });
+    try {
+        await updateDoc(userDocRef, {
+            xp: newTotalXP
+        });
+        console.log(`XP Updated: +${xpToAdd} (Total: ${newTotalXP})`);
+    } catch (error) {
+        console.error("Error updating XP in Firestore:", error);
+    }
 }
         
         function renderResultUI() {
