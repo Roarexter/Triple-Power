@@ -750,18 +750,25 @@ function updateEnvironment() {
         }
 
         window.renderMainMenu = () => {
-    // Level System: 5 XP per level
-    const xpPerLevel = 5;
-    const currentLevel = Math.floor(currentUser.xp / xpPerLevel) + 1;
-    const progressInLevel = currentUser.xp % xpPerLevel;
-    const progressPercent = (progressInLevel / xpPerLevel) * 100;
+    // ESCALATING XP CALCULATION
+    let tempXp = currentUser.xp || 0;
+    let currentLevel = 1;
+    let xpNeededForNext = 5;
+
+    // Loop to determine level: Level 1->2 is 5xp, 2->3 is 10xp, etc.
+    while (tempXp >= xpNeededForNext) {
+        tempXp -= xpNeededForNext;
+        currentLevel++;
+        xpNeededForNext += 5;
+    }
+    const progressPercent = (tempXp / xpNeededForNext) * 100;
 
     screen.innerHTML = `
         <div class="fixed top-6 right-6 flex items-center gap-4 z-50">
             <div class="flex flex-col items-end">
                 <div class="flex items-center gap-2 mb-1">
                     <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Next Level</span>
-                    <span class="text-xs font-black text-blue-400">LVL ${currentLevel + 1}</span>
+                    <span class="text-xs font-black text-blue-400">LVL ${currentLevel + 1} (${tempXp}/${xpNeededForNext} XP)</span>
                 </div>
                 <div class="w-32 h-2 bg-slate-800 rounded-full border border-white/5 overflow-hidden shadow-inner">
                     <div class="h-full bg-gradient-to-r from-blue-600 to-purple-500 transition-all duration-1000" 
@@ -769,7 +776,6 @@ function updateEnvironment() {
                     </div>
                 </div>
             </div>
-
             <button onclick="window.renderSettings()" class="p-3 bg-slate-800/50 hover:bg-slate-700 border border-white/10 rounded-2xl transition-all active:scale-90 group">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-slate-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -786,7 +792,11 @@ function updateEnvironment() {
                     <button id="find-match-btn" class="w-full max-w-xs px-12 py-5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-full font-black text-xl transition-all active:scale-95 shadow-lg shadow-blue-500/20 uppercase italic">
                         Find Online Match
                     </button>
+                    <div class="flex gap-6 mt-2">
+                        <button onclick="window.renderHowToPlay()" class="text-slate-500 hover:text-white text-xs font-black tracking-[0.2em] uppercase transition-colors">? How to Play</button>
+                        <button onclick="window.renderCardLibrary()" class="text-slate-500 hover:text-white text-xs font-black tracking-[0.2em] uppercase transition-colors">🗂 Card Library</button>
                     </div>
+                </div>
             </div>
         </div>
     `;
