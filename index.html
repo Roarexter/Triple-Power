@@ -217,7 +217,7 @@ import {
     updateProfile // Add this
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { 
-    getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot 
+    getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, arrayUnion 
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         
@@ -865,43 +865,43 @@ function updateEnvironment() {
         function renderDraft() {
     const pIndex = gameData.draftOrder[gameData.draftStep];
     const isMyTurn = (pIndex === 0 && playerRole === 'p0') || (pIndex === 1 && playerRole === 'p1');
-    const myPlayer = playerRole === 'p0' ? gameData.players[0] : gameData.players[1];
+    const globalPicked = gameData.pickedCards || [];
     
-    // Use the pool directly from the Game Data in Firestore
-    const myPool = myPlayer.pool || [];
-
-    statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT TO PICK";
+    statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT...";
 
     screen.innerHTML = `
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 ${!isMyTurn ? 'opacity-75 pointer-events-none' : ''}">
             ${CARDS_DATA.map((card) => {
-                const isStillInPool = myPool.includes(card.id);
-                // A card is "Picked" if it's in your unlocked list but NO LONGER in the pool
-                const isAlreadyPicked = userData.unlockedCards.includes(card.id) && !isStillInPool;
-
-                if (isAlreadyPicked) {
-                    return `<div class="w-full h-32 bg-slate-900/10 rounded-lg border border-dashed border-white/5 flex items-center justify-center text-[8px] text-slate-700 uppercase font-black">Picked</div>`;
-                }
-
-                // If it's in the pool, it is pickable
-                const canPick = isMyTurn && isStillInPool;
+                const isUnlockedByMe = userData.unlockedCards.includes(card.id);
+                const isPickedByAnyone = globalPicked.includes(card.id);
+                
+                // A card is selectable ONLY if you own it and no one has picked it yet
+                const canPick = isMyTurn && isUnlockedByMe && !isPickedByAnyone;
 
                 return `
-                <div class="card-container">
+                <div class="card-container relative">
                     <div onclick="${canPick ? `window.pickCard('${card.id}')` : ''}" 
-                         class="gradient-border transition-all shadow-md 
-                         ${!isStillInPool ? 'opacity-20 grayscale' : 'hover:-translate-y-1 cursor-pointer'} 
-                         ${!isMyTurn && isStillInPool ? 'opacity-60' : ''}">
+                         class="gradient-border transition-all duration-300 
+                         ${isPickedByAnyone ? 'opacity-20 grayscale scale-95' : ''} 
+                         ${!isUnlockedByMe ? 'opacity-10 grayscale' : ''}
+                         ${canPick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-cyan-500/50' : ''}">
+                        
                         <div class="bg-slate-800 p-2 rounded-lg h-full flex flex-col">
                             <div class="flex justify-between items-start mb-1">
-                                <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300">${card.type}</span>
+                                <span class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-slate-300 uppercase">${card.type}</span>
                                 <span class="text-[8px] font-bold text-yellow-500">LVL ${card.level}</span>
                             </div>
                             <img src="${card.image}" class="w-full h-24 object-contain bg-slate-900/50 rounded mb-1.5 border border-white/5">
-                            <h3 class="font-bold text-[11px] truncate leading-tight">${card.name}</h3>
+                            <h3 class="font-bold text-[11px] truncate leading-tight text-white">${card.name}</h3>
                         </div>
+
+                        ${isPickedByAnyone ? `
+                            <div class="absolute inset-0 flex items-center justify-center z-10">
+                                <span class="bg-red-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg border border-white/20 uppercase tracking-tighter">Picked</span>
+                            </div>
+                        ` : ''}
                     </div>
-                    ${isStillInPool ? createStatsHTML(card.stats) : ''}
+                    ${isUnlockedByMe && !isPickedByAnyone ? createStatsHTML(card.stats) : ''}
                 </div>`;
             }).join('')}
         </div>
@@ -909,26 +909,31 @@ function updateEnvironment() {
 }
 
         window.pickCard = async (cardId) => {
-    const pIdx = gameData.draftOrder[gameData.draftStep];
-    const card = CARDS_DATA.find(c => c.id === cardId);
+    // 1. Prevent picking if it's already been picked by ANYONE or if it's not your turn
+    if (gameData.pickedCards && gameData.pickedCards.includes(cardId)) return;
     
+    const pIdx = gameData.draftOrder[gameData.draftStep];
+    const isMyTurn = (pIdx === 0 && playerRole === 'p0') || (pIdx === 1 && playerRole === 'p1');
+    if (!isMyTurn) return;
+
+    const card = CARDS_DATA.find(c => c.id === cardId);
     const newPlayers = [...gameData.players];
-    // Remove card from this player's pool
-    newPlayers[pIdx].pool = newPlayers[pIdx].pool.filter(id => id !== cardId);
-    // Add card to this player's hand
     newPlayers[pIdx].hand.push(card);
 
     const nextStep = gameData.draftStep + 1;
     let nextStatus = 'drafting';
     let nextBattlefield = null;
 
+    // Check if draft is finished
     if (nextStep >= gameData.draftOrder.length) {
         nextStatus = 'battle_selection';
         nextBattlefield = BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)];
     }
 
+    // 2. Sync to Firestore
     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
         players: newPlayers,
+        pickedCards: arrayUnion(cardId), // Add this ID to the global "Already Taken" list
         draftStep: nextStep,
         status: nextStatus,
         battlefield: nextBattlefield
