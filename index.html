@@ -6,6 +6,25 @@
     <title>Triple Power</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @keyframes cardReveal {
+    0% { transform: scale(0.5) rotateY(90deg); opacity: 0; }
+    100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+}
+
+.reveal-overlay {
+    background: radial-gradient(circle, rgba(15,23,42,0.9) 0%, rgba(2,6,23,1) 100%);
+    backdrop-filter: blur(10px);
+}
+
+.glow-effect {
+    box-shadow: 0 0 50px rgba(59, 130, 246, 0.5);
+    animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.4); }
+    50% { box-shadow: 0 0 80px rgba(59, 130, 246, 0.8); }
+}
         /* Card Flip Animation Styles */
 .card-flipper-container { 
     perspective: 1000px; 
@@ -325,34 +344,59 @@ window.renderMarket = () => {
 };
 
 window.openPack = async (type) => {
-    // 1. Deduct Tickets
     if (userData.tickets[type] < 3) return;
+
+    // Deduct Tickets
     userData.tickets[type] -= 3;
 
-    // 2. Filter available cards for this type
+    // Roll for Card
     const possibleCards = CARDS_DATA.filter(c => c.type.toLowerCase() === type.toLowerCase());
     const rolledCard = possibleCards[Math.floor(Math.random() * possibleCards.length)];
+    const isNew = !userData.unlockedCards.includes(rolledCard.id);
 
-    // 3. Add to unlocked list if not already there
-    let message = `You found: ${rolledCard.name}!`;
-    if (!userData.unlockedCards.includes(rolledCard.id)) {
+    if (isNew) {
         userData.unlockedCards.push(rolledCard.id);
-        message += " (NEW DISCOVERY!)";
-    } else {
-        message += " (Already Discovered)";
     }
 
-    // 4. Update Database
+    // Update Database
     const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
     await updateDoc(userDocRef, {
         tickets: userData.tickets,
         unlockedCards: userData.unlockedCards
     });
 
-    // 5. Show results (simple alert for now, can be improved to a fancy UI)
-    alert(message);
-    window.renderMarket(); // Refresh UI
+    // TRIGGER GLOW REVEAL
+    showRevealAnimation(rolledCard, isNew);
+    window.renderMarket(); 
 };
+
+function showRevealAnimation(card, isNew) {
+    const revealDiv = document.createElement('div');
+    revealDiv.className = "fixed inset-0 z-[100] reveal-overlay flex items-center justify-center p-6";
+    
+    revealDiv.innerHTML = `
+        <div class="max-w-sm w-full space-y-8 text-center animate-[cardReveal_0.8s_ease-out]">
+            <div class="relative">
+                <div class="absolute -inset-4 bg-blue-500/20 blur-3xl rounded-full"></div>
+                
+                <div class="relative bg-slate-900 border-4 ${isNew ? 'border-blue-400 glow-effect' : 'border-slate-700'} rounded-3xl p-6 shadow-2xl">
+                    <div class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">
+                        ${isNew ? '✨ New Discovery ✨' : 'Already Discovered'}
+                    </div>
+                    <img src="${card.image}" class="w-full h-48 object-contain mb-4">
+                    <h3 class="text-3xl font-black text-white italic uppercase tracking-tighter">${card.name}</h3>
+                    <p class="text-slate-400 text-xs mt-2 uppercase font-bold tracking-widest">${card.type} Artifact</p>
+                </div>
+            </div>
+
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    class="px-12 py-4 bg-white text-black font-black uppercase tracking-widest rounded-full hover:scale-110 transition-transform shadow-xl">
+                Continue
+            </button>
+        </div>
+    `;
+    document.body.appendChild(revealDiv);
+}
     
 window.renderEndGame = () => {
     // Determine winner based on who has the most cards in hand
