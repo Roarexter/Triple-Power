@@ -287,6 +287,18 @@ let playerRole = null; // 'p0' or 'p1'
         const gameLog = document.getElementById('game-log');
         const logContainer = document.getElementById('log-container');
 
+const getLevelFromXP = (xp) => {
+    let tempXp = xp || 0;
+    let currentLevel = 1;
+    let xpNeededForNext = 5;
+    while (tempXp >= xpNeededForNext) {
+        tempXp -= xpNeededForNext;
+        currentLevel++;
+        xpNeededForNext += 5;
+    }
+    return currentLevel;
+};
+        
 window.renderMarket = () => {
     const vTickets = userData.tickets?.village || 0;
     const nTickets = userData.tickets?.nature || 0;
@@ -1342,11 +1354,15 @@ function updateEnvironment() {
 async function grantMatchRewards(isWinner) {
     if (!currentUser) return;
 
+    // --- DETECTION LOGIC START ---
+    // 1. Calculate the level BEFORE adding new XP
+    const oldLevel = getLevelFromXP(userData.xp || 0);
+    // --- DETECTION LOGIC END ---
+
     const xpToAdd = isWinner ? 3 : 1;
     let newTickets = { ...userData.tickets };
     let wonType = null;
 
-    // Logic for random ticket on win
     if (isWinner) {
         wonType = Math.random() > 0.5 ? 'village' : 'nature';
         newTickets[wonType] = (newTickets[wonType] || 0) + 1;
@@ -1356,10 +1372,62 @@ async function grantMatchRewards(isWinner) {
     userData.tickets = newTickets;
 
     const userDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid);
-    await updateDoc(userDocRef, {
-        xp: userData.xp,
-        tickets: userData.tickets
-    });
+    try {
+        await updateDoc(userDocRef, {
+            xp: userData.xp,
+            tickets: userData.tickets
+        });
+
+        // --- DETECTION LOGIC START ---
+        // 2. Calculate the level AFTER the update
+        const newLevel = getLevelFromXP(userData.xp);
+
+        // 3. Compare levels. If it increased, trigger the pop-up
+        if (newLevel > oldLevel) {
+            // Delay by 1 second so the "Match Over" screen finishes its animation first
+            setTimeout(() => triggerLevelUpGift(newLevel), 1000);
+        }
+        // --- DETECTION LOGIC END ---
+
+    } catch (error) {
+        console.error("Error updating rewards:", error);
+    }
+}
+
+// Add this below grantMatchRewards
+function triggerLevelUpGift(level) {
+    const giftType = Math.random() > 0.5 ? 'village' : 'nature';
+    const levelDiv = document.createElement('div');
+    levelDiv.className = "fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-xl animate-pop";
+    
+    levelDiv.innerHTML = `
+        <div class="max-w-md w-full text-center space-y-8">
+            <div class="text-7xl animate-bounce">✨</div>
+            <h2 class="text-6xl font-black text-white italic uppercase tracking-tighter">Level ${level}</h2>
+            <div class="bg-slate-900 border-2 border-blue-500/30 rounded-3xl p-8 shadow-2xl">
+                <p class="text-slate-300 mb-6">You've earned a free <strong>${giftType} Pack</strong>!</p>
+                <button id="claim-gift-btn" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black uppercase tracking-widest">
+                    Open Gift
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(levelDiv);
+
+    document.getElementById('claim-gift-btn').onclick = async () => {
+        levelDiv.remove();
+        // Pack opening logic here...
+        const possibleCards = CARDS_DATA.filter(c => c.type.toLowerCase() === giftType);
+        const rolledCard = possibleCards[Math.floor(Math.random() * possibleCards.length)];
+        
+        if (!userData.unlockedCards.includes(rolledCard.id)) {
+            userData.unlockedCards.push(rolledCard.id);
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', currentUser.uid), { 
+                unlockedCards: userData.unlockedCards 
+            });
+        }
+        showRevealAnimation(rolledCard, true);
+    };
 }
         
         function renderResultUI() {
