@@ -339,7 +339,7 @@ onAuthStateChanged(auth, async (user) => {
             const data = userSnap.data();
             userData = {
                 xp: data.xp || 0,
-                unlockedCards: data.unlockedCards || []
+                unlockedCards: data.unlockedCards || [],
                 tickets: data.tickets || { village: 0, nature: 0 }
             };
         }
