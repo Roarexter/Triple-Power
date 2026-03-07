@@ -1066,7 +1066,7 @@ function updateEnvironment() {
     statusText.innerText = isMyTurn ? "YOUR TURN TO PICK" : "WAITING FOR OPPONENT...";
 
     screen.innerHTML = `
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 ${!isMyTurn ? 'opacity-75 pointer-events-none' : ''}">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 ${!isMyTurn ? 'opacity-50 pointer-events-none' : ''}">
             ${CARDS_DATA.map((card) => {
                 const isUnlockedByMe = userData.unlockedCards.includes(card.id);
                 const isPickedByAnyone = globalPicked.includes(card.id);
