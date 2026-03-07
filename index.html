@@ -246,22 +246,17 @@ const CARDS_DATA = [
     { id: 'c2', name: "Tiny", image: "Tiny.jpeg", type: "Nature", level: 1, special: "Underdog Mentality", stats: { strength: 6, speed: 16, agility: 19, health: 7, intelligence: 9, creativity: 12, accuracy: 8, stamina: 10, skill: 8, strategy: 5 } },
     { id: 'c3', name: "Vine Thrasher", image: "VineThrasher.jpeg", type: "Nature", level: 2, special: "Set My Own Rules", stats: { strength: 16, speed: 7, agility: 11, health: 8, intelligence: 12, creativity: 11, accuracy: 4, stamina: 9, skill: 14, strategy: 13 } },
     { id: 'c4', name: "Bush Beast", image: "BushBeast.jpeg", type: "Nature", level: 2, special: "Reinforcements", stats: { strength: 7, speed: 16, agility: 13, health: 4, intelligence: 6, creativity: 14, accuracy: 12, stamina: 8, skill: 7, strategy: 18 } },
-    { id: 'c9', name: "Mudster", image: "https://placehold.co/400x400/0f172a/3b82f6?text=Mudster", type: "Nature", level: 3, special: "First Come First Serve", stats: { strength: 10, speed: 7, agility: 18, health: 8, intelligence: 4, creativity: 20, accuracy: 9, stamina: 14, skill: 12, strategy: 8 } },
     { id: 'c5', name: "Villager", image: "Villager.jpeg", type: "Village", level: 1, special: "Battle Ready", stats: { strength: 7, speed: 12, agility: 11, health: 15, intelligence: 11, creativity: 9, accuracy: 10, stamina: 13, skill: 7, strategy: 5 } },
     { id: 'c6', name: "Realo", image: "Realo.jpeg", type: "Village", level: 1, special: "Rescue Mission", stats: { strength: 10, speed: 9, agility: 9, health: 8, intelligence: 13, creativity: 13, accuracy: 8, stamina: 11, skill: 8, strategy: 11 } },
     { id: 'c7', name: "Warrior", image: "Warrior.jpeg", type: "Village", level: 2, special: "Bonus Training", stats: { strength: 18, speed: 13, agility: 8, health: 8, intelligence: 5, creativity: 7, accuracy: 12, stamina: 13, skill: 12, strategy: 9 } },
-    { id: 'c8', name: "Target Shielder", image: "TargetShielder.jpeg", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } },
-    { id: 'c10', name: "Lavalarn", image: "https://placehold.co/400x400/0f172a/ef4444?text=Lavalarn", type: "Flame", level: 1, special: "Battle Ready", stats: { strength: 11, speed: 14, agility: 11, health: 6, intelligence: 9, creativity: 7, accuracy: 12, stamina: 11, skill: 12, strategy: 7 } },
-    { id: 'c11', name: "Fire Fighter", image: "https://placehold.co/400x400/0f172a/ef4444?text=Fire+Fighter", type: "Flame", level: 1, special: "Bonus Training", stats: { strength: 14, speed: 7, agility: 10, health: 13, intelligence: 16, creativity: 7, accuracy: 9, stamina: 7, skill: 8, strategy: 9 } },
-    { id: 'c12', name: "Magma Monster", image: "https://placehold.co/400x400/0f172a/ef4444?text=Magma+Monster", type: "Flame", level: 2, special: "Know The Weakness", stats: { strength: 18, speed: 6, agility: 7, health: 12, intelligence: 8, creativity: 8, accuracy: 15, stamina: 10, skill: 14, strategy: 7 } }
+    { id: 'c8', name: "Target Shielder", image: "TargetShielder.jpeg", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } }
 ];
 
         const BATTLEFIELDS = [
             { name: "Jungle Fortress", type: "Nature", attrs: ["agility", "skill", "creativity"] },
             { name: "Underground Den", type: "Nature", attrs: ["stamina", "strategy", "speed"] },
             { name: "Tower Takedown", type: "Village", attrs: ["intelligence", "skill", "accuracy"] },
-            { name: "Town Center", type: "Village", attrs: ["strength", "health", "speed"] },
-            { name: "Volcano Center", type: "Flame", attrs: ["health", "stamina", "strategy"] }
+            { name: "Town Center", type: "Village", attrs: ["strength", "health", "speed"] }
         ];
 
         // Firebase Configuration
@@ -371,26 +366,8 @@ window.renderMarket = () => {
                         ${nTickets >= 3 ? 'Open Pack' : 'Need More Tickets'}
                     </button>
                 </div>
-
-<div class="bg-slate-900/50 border-2 border-orange-500/20 rounded-3xl p-8 flex flex-col items-center text-center space-y-6">
-    <div class="text-6xl drop-shadow-[0_0_15px_rgba(249,115,22,0.5)]">🔥</div>
-    <div>
-        <h3 class="text-2xl font-black text-orange-500 uppercase italic">Flame Pack</h3>
-        <p class="text-slate-400 text-xs mt-1">Contains 1 random Flame Artifact</p>
-    </div>
-    <div class="bg-orange-500/10 border border-orange-500/20 px-4 py-2 rounded-xl">
-        <span class="text-orange-500 font-black text-xs uppercase">Cost: 3 Tickets (Any)</span>
-    </div>
-    <button onclick="openPack('flame')" 
-        ${(vTickets + nTickets) < 3 ? 'disabled' : ''} 
-        class="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all 
-        ${(vTickets + nTickets) >= 3 ? 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}">
-        Open Pack
-    </button>
-</div>
-                
             </div>
-        
+
             <div class="text-center">
                 <button onclick="window.renderMainMenu()" class="px-12 py-4 bg-slate-800 text-white rounded-full font-black uppercase text-xs tracking-widest border border-white/5 hover:bg-slate-700 transition-colors">
                     ← Return to Menu
@@ -672,8 +649,6 @@ window.renderCardLibrary = () => {
         "Rescue Mission": "Subtract 3 from your total, but regain the last card you lost.",
         "Bonus Training": "Add 5 to the card's strongest overall attribute (even if not in the battlefield).",
         "Narrow It Down": "The weakest battlefield attribute for this card is ignored for both players."
-        "Know The Weakness": "If the opponent is the same type, cancel any special they try to use.",
-    "First Come First Serve": "If this card wins, you may swap it for another card after seeing the next arena."
     };
 
     const groupedByType = CARDS_DATA.reduce((acc, card) => {
@@ -1278,16 +1253,6 @@ function updateEnvironment() {
 
         // 2. ONLY run specials if the card type matches the battlefield type
         if (typeMatches && card.special) {
-
-if (opponent && opponent.special === "Know The Weakness" && opponent.type === card.type) {
-        specialMessages[i] = `${opponent.name} canceled ${card.name}'s special!`;
-        return; // This 'return' skips the rest of the special logic for this card
-    }
-            
-if (oppCard && oppCard.special === "Know The Weakness" && oppCard.type === card.type) {
-            activations[i] = `Canceled by ${oppCard.name}'s Weakness Knowledge!`;
-            return; // Skip special activation for this card
-        }
             
             // FOCUSED TRAINING (Nature)
             if (card.special === "Focused Training") {
@@ -1337,10 +1302,6 @@ if (oppCard && oppCard.special === "Know The Weakness" && oppCard.type === card.
                     .reduce((a, b) => (card.stats[a] || 0) > (card.stats[b] || 0) ? a : b);
                 finalScores[i] += 5;
                 activations[i] = `Special: +5 bonus (${strongest})!`;
-
-                // --- NEW: FIRST COME FIRST SERVE LOGIC ---
-        else if (card.special === "First Come First Serve") {
-            activations[i] = "Ready to swap on victory!";
             }
         }
     });
@@ -1552,20 +1513,6 @@ const winnerName = gameData.players[res.winnerIdx].name || `Player ${res.winnerI
 
         window.nextRound = async () => {
     const winnerIdx = gameData.battleResults.winnerIdx;
-    const winningCard = gameData.activeCards[winnerIdx];
-    
-    // --- NEW: FIRST COME FIRST SERVE CHECK ---
-    if (winningCard && winningCard.special === "First Come First Serve" && winnerIdx === playerIdx) {
-        const wantToSwap = confirm("Mudster's Ability: Would you like to swap this card for another from your hand before the next arena?");
-        if (wantToSwap) {
-            // Set status to battle_selection so the player can pick a new card
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                status: 'battle_selection',
-                [`activeCards.${playerIdx}`]: null // Clear only your card
-            });
-            return; // Stop here and let them pick
-        }
-    }
     
     // Check if either player has 0 cards left
     const p0HandEmpty = gameData.players[0].hand.length === 0;
