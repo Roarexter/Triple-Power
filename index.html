@@ -249,7 +249,8 @@ const CARDS_DATA = [
     { id: 'c5', name: "Villager", image: "Villager.jpeg", type: "Village", level: 1, special: "Battle Ready", stats: { strength: 7, speed: 12, agility: 11, health: 15, intelligence: 11, creativity: 9, accuracy: 10, stamina: 13, skill: 7, strategy: 5 } },
     { id: 'c6', name: "Realo", image: "Realo.jpeg", type: "Village", level: 1, special: "Rescue Mission", stats: { strength: 10, speed: 9, agility: 9, health: 8, intelligence: 13, creativity: 13, accuracy: 8, stamina: 11, skill: 8, strategy: 11 } },
     { id: 'c7', name: "Warrior", image: "Warrior.jpeg", type: "Village", level: 2, special: "Bonus Training", stats: { strength: 18, speed: 13, agility: 8, health: 8, intelligence: 5, creativity: 7, accuracy: 12, stamina: 13, skill: 12, strategy: 9 } },
-    { id: 'c8', name: "Target Shielder", image: "TargetShielder.jpeg", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } }
+    { id: 'c8', name: "Target Shielder", image: "TargetShielder.jpeg", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } },
+    { id: 'c9', name: "Mudster", image: "https://placehold.co/400x400/0f172a/3b82f6?text=Mudster", type: "Nature", level: 3, special: "First Come First Serve", stats: { strength: 10, speed: 7, agility: 18, health: 8, intelligence: 4, creativity: 20, accuracy: 9, stamina: 14, skill: 12, strategy: 8 }
 ];
 
         const BATTLEFIELDS = [
@@ -648,7 +649,8 @@ window.renderCardLibrary = () => {
         "Battle Ready": "Every attribute increases by 1 point for this round.",
         "Rescue Mission": "Subtract 3 from your total, but regain the last card you lost.",
         "Bonus Training": "Add 5 to the card's strongest overall attribute (even if not in the battlefield).",
-        "Narrow It Down": "The weakest battlefield attribute for this card is ignored for both players."
+        "Narrow It Down": "The weakest battlefield attribute for this card is ignored for both players.",
+        "First Come First Serve": "If this card wins its battle, you may swap it for another card in your hand after seeing the next arena."
     };
 
     const groupedByType = CARDS_DATA.reduce((acc, card) => {
@@ -1513,13 +1515,26 @@ const winnerName = gameData.players[res.winnerIdx].name || `Player ${res.winnerI
 
         window.nextRound = async () => {
     const winnerIdx = gameData.battleResults.winnerIdx;
+    const winningCard = gameData.activeCards[winnerIdx];
+    const playerIdx = playerRole === 'p0' ? 0 : 1;
+
+    // --- MUDSTER SPECIAL ABILITY LOGIC ---
+    if (winningCard && winningCard.special === "First Come First Serve" && winnerIdx === playerIdx) {
+        const wantToSwap = confirm("Mudster won! Would you like to swap it for a different card in your hand for the next battle?");
+        if (wantToSwap) {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+                status: 'battle_selection',
+                [`activeCards.${playerIdx}`]: null // Clears your card so you can pick a new one
+            });
+            return; // Exit early to allow the player to pick
+        }
+    }
     
-    // Check if either player has 0 cards left
+    // --- Standard Next Round Logic ---
     const p0HandEmpty = gameData.players[0].hand.length === 0;
     const p1HandEmpty = gameData.players[1].hand.length === 0;
 
     if (p0HandEmpty || p1HandEmpty) {
-        // Transition to finished state
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: 'finished'
         });
@@ -1530,8 +1545,7 @@ const winnerName = gameData.players[res.winnerIdx].name || `Player ${res.winnerI
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
             status: 'battle_selection',
             activeCards: newActive,
-            battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)],
-            battleResults: null
+            battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)]
         });
     }
 };
