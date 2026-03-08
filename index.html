@@ -250,14 +250,18 @@ const CARDS_DATA = [
     { id: 'c6', name: "Realo", image: "Realo.jpeg", type: "Village", level: 1, special: "Rescue Mission", stats: { strength: 10, speed: 9, agility: 9, health: 8, intelligence: 13, creativity: 13, accuracy: 8, stamina: 11, skill: 8, strategy: 11 } },
     { id: 'c7', name: "Warrior", image: "Warrior.jpeg", type: "Village", level: 2, special: "Bonus Training", stats: { strength: 18, speed: 13, agility: 8, health: 8, intelligence: 5, creativity: 7, accuracy: 12, stamina: 13, skill: 12, strategy: 9 } },
     { id: 'c8', name: "Target Shielder", image: "TargetShielder.jpeg", type: "Village", level: 2, special: "Narrow It Down", stats: { strength: 4, speed: 9, agility: 6, health: 22, intelligence: 5, creativity: 7, accuracy: 17, stamina: 12, skill: 8, strategy: 15 } },
-    { id: 'c9', name: "Mudster", image: "https://placehold.co/400x400/0f172a/3b82f6?text=Mudster", type: "Nature", level: 3, special: "First Come First Serve", stats: { strength: 10, speed: 7, agility: 18, health: 8, intelligence: 4, creativity: 20, accuracy: 9, stamina: 14, skill: 12, strategy: 8 } }
+    { id: 'c9', name: "Mudster", image: "https://placehold.co/400x400/0f172a/3b82f6?text=Mudster", type: "Nature", level: 3, special: "First Come First Serve", stats: { strength: 10, speed: 7, agility: 18, health: 8, intelligence: 4, creativity: 20, accuracy: 9, stamina: 14, skill: 12, strategy: 8 } },
+    { id: 'c10', name: "Lavalarn", image: "https://placehold.co/400x400/0f172a/ef4444?text=Lavalarn", type: "Flame", level: 1, special: "Battle Ready", stats: { strength: 11, speed: 14, agility: 11, health: 6, intelligence: 9, creativity: 7, accuracy: 12, stamina: 11, skill: 12, strategy: 7 } },
+    { id: 'c11', name: "Fire Fighter", image: "https://placehold.co/400x400/0f172a/ef4444?text=Fire+Fighter", type: "Flame", level: 1, special: "Bonus Training", stats: { strength: 14, speed: 7, agility: 10, health: 13, intelligence: 16, creativity: 7, accuracy: 9, stamina: 7, skill: 8, strategy: 9 } },
+    { id: 'c12', name: "Magma Monster", image: "https://placehold.co/400x400/0f172a/ef4444?text=Magma+Monster", type: "Flame", level: 2, special: "Know The Weakness", stats: { strength: 18, speed: 6, agility: 7, health: 12, intelligence: 8, creativity: 8, accuracy: 15, stamina: 10, skill: 14, strategy: 7 } }
 ];
 
         const BATTLEFIELDS = [
             { name: "Jungle Fortress", type: "Nature", attrs: ["agility", "skill", "creativity"] },
             { name: "Underground Den", type: "Nature", attrs: ["stamina", "strategy", "speed"] },
             { name: "Tower Takedown", type: "Village", attrs: ["intelligence", "skill", "accuracy"] },
-            { name: "Town Center", type: "Village", attrs: ["strength", "health", "speed"] }
+            { name: "Town Center", type: "Village", attrs: ["strength", "health", "speed"] },
+            { name: "Volcano Center", type: "Flame", attrs: ["health", "stamina", "strategy"] }
         ];
 
         // Firebase Configuration
@@ -367,6 +371,31 @@ window.renderMarket = () => {
                         ${nTickets >= 3 ? 'Open Pack' : 'Need More Tickets'}
                     </button>
                 </div>
+                <div class="bg-slate-900/50 border-2 border-orange-500/20 rounded-3xl p-8 flex flex-col items-center text-center space-y-6">
+    <div class="text-6xl drop-shadow-[0_0_15px_rgba(249,115,22,0.5)]">🔥</div>
+    <div>
+        <h3 class="text-2xl font-black text-orange-500 uppercase italic">Flame Pack</h3>
+        <p class="text-slate-400 text-xs mt-1">Contains 1 random Flame Artifact</p>
+    </div>
+    
+    <div class="w-full space-y-2">
+        <div class="flex justify-between text-[10px] font-black uppercase tracking-widest text-orange-500/70">
+            <span>Progress</span>
+            <span>${userData.tickets.flame || 0}/3 Tickets</span>
+        </div>
+        <div class="h-3 bg-slate-800 rounded-full border border-white/5 overflow-hidden p-0.5">
+            <div class="h-full bg-gradient-to-r from-orange-600 to-amber-500 rounded-full transition-all duration-1000" 
+                 style="width: ${Math.min(((userData.tickets.flame || 0) / 3) * 100, 100)}%"></div>
+        </div>
+    </div>
+
+    <button onclick="openPack('flame')" 
+        ${(userData.tickets.flame || 0) < 3 ? 'disabled' : ''} 
+        class="w-full py-4 rounded-xl font-black uppercase tracking-widest transition-all 
+        ${(userData.tickets.flame || 0) >= 3 ? 'bg-orange-600 hover:bg-orange-500 text-white' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}">
+        ${(userData.tickets.flame || 0) >= 3 ? 'Open Pack' : 'Need More Tickets'}
+    </button>
+</div>
             </div>
 
             <div class="text-center">
@@ -493,7 +522,7 @@ onAuthStateChanged(auth, async (user) => {
         if (!userSnap.exists()) {
             const shuffled = [...CARDS_DATA].sort(() => 0.5 - Math.random());
             const unlocked = shuffled.slice(0, 4).map(c => c.id);
-            userData = { xp: 0, unlockedCards: unlocked, tickets: { village: 0, nature: 0 } };
+            userData = { xp: 0, unlockedCards: unlocked, tickets: { village: 0, nature: 0, flame: 0 } };
             await setDoc(userDocRef, { 
                 xp: 0, 
                 unlockedCards: unlocked,
@@ -505,7 +534,7 @@ onAuthStateChanged(auth, async (user) => {
             userData = {
                 xp: data.xp || 0,
                 unlockedCards: data.unlockedCards || [],
-                tickets: data.tickets || { village: 0, nature: 0 }
+                tickets: data.tickets || { village: 0, nature: 0, flame: 0 }
             };
         }
 
@@ -1255,6 +1284,17 @@ function updateEnvironment() {
 
         // 2. ONLY run specials if the card type matches the battlefield type
         if (typeMatches && card.special) {
+
+[0, 1].forEach(i => {
+    const card = gameData.activeCards[i];
+    const opponent = gameData.activeCards[i === 0 ? 1 : 0];
+
+    // Know The Weakness: Cancel opponent's special if they are the same type
+    if (opponent && opponent.special === "Know The Weakness" && opponent.type === card.type) {
+        activations[i] = `Canceled by ${opponent.name}'s Knowledge!`;
+        card._isSilenced = true; // Temporary flag to skip its effect
+    }
+});
             
             // FOCUSED TRAINING (Nature)
             if (card.special === "Focused Training") {
@@ -1366,9 +1406,14 @@ async function grantMatchRewards(isWinner) {
     let wonType = null;
 
     if (isWinner) {
-        wonType = Math.random() > 0.5 ? 'village' : 'nature';
-        newTickets[wonType] = (newTickets[wonType] || 0) + 1;
-    }
+    const roll = Math.random();
+    let wonType;
+    if (roll < 0.33) wonType = 'village';
+    else if (roll < 0.66) wonType = 'nature';
+    else wonType = 'flame'; // 33% chance for each type
+    
+    newTickets[wonType] = (newTickets[wonType] || 0) + 1;
+}
 
     userData.xp = (userData.xp || 0) + xpToAdd;
     userData.tickets = newTickets;
