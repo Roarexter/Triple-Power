@@ -997,7 +997,7 @@ function updateEnvironment() {
                 <div class="flex flex-col">
                     <span class="text-[9px] text-slate-400 font-black uppercase tracking-widest leading-none">Inventory</span>
                     <span class="text-lg font-black text-white leading-tight">
-                        ${(userData.tickets?.village || 0) + (userData.tickets?.nature || 0)}
+                        ${(userData.tickets?.village || 0) + (userData.tickets?.nature || 0) + (userData.tickets?.flame || 0)}
                     </span>
                 </div>
             </div>
@@ -1011,6 +1011,10 @@ function updateEnvironment() {
                     <div class="flex justify-between items-center text-xs">
                         <span class="text-slate-400">Nature Tickets</span>
                         <span class="font-black text-white">${userData.tickets?.nature || 0}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Flame Tickets</span>
+                        <span class="font-black text-white">${userData.tickets?.flame || 0}</span>
                     </div>
                 </div>
             </div>
@@ -1559,60 +1563,58 @@ const winnerName = gameData.players[res.winnerIdx].name || `Player ${res.winnerI
 }
 
         window.nextRound = async () => {
-    // 1. Get current battle data
-    const results = gameData.battleResults;
-    if (!results) return;
-
-    const winnerIdx = results.winnerIdx;
+    // 1. Basic Safety Checks
+    if (!gameData.battleResults) return;
+    
+    const winnerIdx = gameData.battleResults.winnerIdx;
     const winningCard = gameData.activeCards[winnerIdx];
-    const isNatureBattlefield = gameData.battlefield.type === 'Nature';
-    const myIdx = playerRole === 'p0' ? 0 : 1;
+    const isNatureBattlefield = gameData.battlefield?.type === 'Nature';
+    const playerIdx = playerRole === 'p0' ? 0 : 1;
 
-    // 2. Only the WINNER should handle the database update to prevent race conditions
-    // If you are the loser, you just wait for the screen to update automatically
-    if (myIdx !== winnerIdx) {
-        console.log("Waiting for the winner to advance the round...");
-        return; 
-    }
+    // 2. Only the winner should trigger the update to prevent double-processing
+    if (playerIdx !== winnerIdx) return;
 
     try {
         let nextStatus = 'battle_selection';
         let newActiveCards = [null, null];
-        let updatedPlayers = JSON.parse(JSON.stringify(gameData.players)); // Deep copy
+        
+        // Use a deep copy of players to avoid reference issues
+        let updatedPlayers = JSON.parse(JSON.stringify(gameData.players));
 
-        // --- MUDSTER REWORK LOGIC ---
+        // --- MUDSTER SPECIAL LOGIC ---
+        // If Mudster won on a Nature battlefield, it returns to hand
         if (winningCard?.special === "First Come First Serve" && isNatureBattlefield) {
-            // Mudster returns to the winner's hand
             updatedPlayers[winnerIdx].hand.push(winningCard);
-            // In this case, BOTH players must pick a new card
+            // Both slots become null so both players pick a new card
             newActiveCards = [null, null];
-            alert("Mudster returns to your hand! Both players will now select new cards.");
+            console.log("Mudster returned to hand!");
         } else {
-            // Standard Logic: Winner stays on the field
+            // Standard: Winner stays on the field
             newActiveCards[winnerIdx] = winningCard;
         }
 
-        // 3. Check for Game Over (if either hand is now empty)
-        const p0HandEmpty = updatedPlayers[0].hand.length === 0 && !newActiveCards[0];
-        const p1HandEmpty = updatedPlayers[1].hand.length === 0 && !newActiveCards[1];
-
-        if (p0HandEmpty || p1HandEmpty) {
+        // 3. Check if the game is over
+        const p0Finished = updatedPlayers[0].hand.length === 0 && !newActiveCards[0];
+        const p1Finished = updatedPlayers[1].hand.length === 0 && !newActiveCards[1];
+        
+        if (p0Finished || p1Finished) {
             nextStatus = 'finished';
         }
 
-        // 4. Update the Database
+        // 4. Update Firestore
         const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
         await updateDoc(gameRef, {
             status: nextStatus,
             players: updatedPlayers,
             activeCards: newActiveCards,
             battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)],
-            battleResults: null // Clear old results for the next round
+            // THIS IS THE FIX: Clear the results so the pop-up closes
+            battleResults: null 
         });
 
     } catch (error) {
-        console.error("Failed to advance round:", error);
-        alert("Something went wrong. Please try clicking 'Next Battle' again.");
+        console.error("Error in nextRound:", error);
+        alert("Failed to advance. Please try again.");
     }
 };
     </script>
