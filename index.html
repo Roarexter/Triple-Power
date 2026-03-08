@@ -1559,49 +1559,60 @@ const winnerName = gameData.players[res.winnerIdx].name || `Player ${res.winnerI
 }
 
         window.nextRound = async () => {
-    const winnerIdx = gameData.battleResults.winnerIdx;
+    // 1. Get current battle data
+    const results = gameData.battleResults;
+    if (!results) return;
+
+    const winnerIdx = results.winnerIdx;
     const winningCard = gameData.activeCards[winnerIdx];
-    const playerIdx = playerRole === 'p0' ? 0 : 1;
+    const isNatureBattlefield = gameData.battlefield.type === 'Nature';
+    const myIdx = playerRole === 'p0' ? 0 : 1;
 
-    // --- MUDSTER SPECIAL ABILITY LOGIC ---
-    if (winningCard?.special === "First Come First Serve" && isNatureBattlefield) {
-        // Only the winner performs the database update to avoid conflicts
-        if (winnerIdx === playerIdx) {
-            const updatedPlayers = [...gameData.players];
-            
-            // 1. Mudster returns to the winner's hand
-            updatedPlayers[winnerIdx].hand.push(winningCard);
-
-            // 2. Both slots are cleared so BOTH players pick a card for the next round
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-                players: updatedPlayers,
-                activeCards: [null, null], 
-                status: 'battle_selection',
-                battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)]
-            });
-            
-            alert("Mudster returns to your hand! Choose a new card for the next battle.");
-        }
+    // 2. Only the WINNER should handle the database update to prevent race conditions
+    // If you are the loser, you just wait for the screen to update automatically
+    if (myIdx !== winnerIdx) {
+        console.log("Waiting for the winner to advance the round...");
         return; 
     }
-    
-    // --- Standard Next Round Logic ---
-    const p0HandEmpty = gameData.players[0].hand.length === 0;
-    const p1HandEmpty = gameData.players[1].hand.length === 0;
 
-    if (p0HandEmpty || p1HandEmpty) {
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-            status: 'finished'
-        });
-    } else {
-        const newActive = [null, null];
-        newActive[winnerIdx] = gameData.activeCards[winnerIdx];
+    try {
+        let nextStatus = 'battle_selection';
+        let newActiveCards = [null, null];
+        let updatedPlayers = JSON.parse(JSON.stringify(gameData.players)); // Deep copy
 
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
-            status: 'battle_selection',
-            activeCards: newActive,
-            battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)]
+        // --- MUDSTER REWORK LOGIC ---
+        if (winningCard?.special === "First Come First Serve" && isNatureBattlefield) {
+            // Mudster returns to the winner's hand
+            updatedPlayers[winnerIdx].hand.push(winningCard);
+            // In this case, BOTH players must pick a new card
+            newActiveCards = [null, null];
+            alert("Mudster returns to your hand! Both players will now select new cards.");
+        } else {
+            // Standard Logic: Winner stays on the field
+            newActiveCards[winnerIdx] = winningCard;
+        }
+
+        // 3. Check for Game Over (if either hand is now empty)
+        const p0HandEmpty = updatedPlayers[0].hand.length === 0 && !newActiveCards[0];
+        const p1HandEmpty = updatedPlayers[1].hand.length === 0 && !newActiveCards[1];
+
+        if (p0HandEmpty || p1HandEmpty) {
+            nextStatus = 'finished';
+        }
+
+        // 4. Update the Database
+        const gameRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId);
+        await updateDoc(gameRef, {
+            status: nextStatus,
+            players: updatedPlayers,
+            activeCards: newActiveCards,
+            battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)],
+            battleResults: null // Clear old results for the next round
         });
+
+    } catch (error) {
+        console.error("Failed to advance round:", error);
+        alert("Something went wrong. Please try clicking 'Next Battle' again.");
     }
 };
     </script>
