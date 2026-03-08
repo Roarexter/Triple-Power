@@ -679,7 +679,7 @@ window.renderCardLibrary = () => {
         "Rescue Mission": "Subtract 3 from your total, but regain the last card you lost.",
         "Bonus Training": "Add 5 to the card's strongest overall attribute (even if not in the battlefield).",
         "Narrow It Down": "The weakest battlefield attribute for this card is ignored for both players.",
-        "First Come First Serve": "If this card wins its battle, you may swap it for another card in your hand after seeing the next arena."
+        "First Come First Serve": "If this card wins in a Nature Battlefield, it returns to your hand and you select a new card for the next round."
     };
 
     const groupedByType = CARDS_DATA.reduce((acc, card) => {
@@ -1564,15 +1564,25 @@ const winnerName = gameData.players[res.winnerIdx].name || `Player ${res.winnerI
     const playerIdx = playerRole === 'p0' ? 0 : 1;
 
     // --- MUDSTER SPECIAL ABILITY LOGIC ---
-    if (winningCard && winningCard.special === "First Come First Serve" && winnerIdx === playerIdx) {
-        const wantToSwap = confirm("Mudster won! Would you like to swap it for a different card in your hand for the next battle?");
-        if (wantToSwap) {
+    if (winningCard?.special === "First Come First Serve" && isNatureBattlefield) {
+        // Only the winner performs the database update to avoid conflicts
+        if (winnerIdx === playerIdx) {
+            const updatedPlayers = [...gameData.players];
+            
+            // 1. Mudster returns to the winner's hand
+            updatedPlayers[winnerIdx].hand.push(winningCard);
+
+            // 2. Both slots are cleared so BOTH players pick a card for the next round
             await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+                players: updatedPlayers,
+                activeCards: [null, null], 
                 status: 'battle_selection',
-                [`activeCards.${playerIdx}`]: null // Clears your card so you can pick a new one
+                battlefield: BATTLEFIELDS[Math.floor(Math.random() * BATTLEFIELDS.length)]
             });
-            return; // Exit early to allow the player to pick
+            
+            alert("Mudster returns to your hand! Choose a new card for the next battle.");
         }
+        return; 
     }
     
     // --- Standard Next Round Logic ---
