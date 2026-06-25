@@ -944,28 +944,25 @@ function updateEnvironment() {
     (id);
 }
 
-        function watchGame(id) {
+        // Add this helper to sync the game
+function watchGame(id) {
     onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', id), (snapshot) => {
         if (!snapshot.exists()) return;
         
         const newData = snapshot.data();
-
-        // 1. Check if this is the first time the game is loading
         const isFirstLoad = (typeof gameData === 'undefined' || gameData === null);
 
-        // 2. Logic: Run processGameState if:
-        //    a) It is the first load
-        //    b) OR the status has actually changed
-        if (isFirstLoad || (gameData && newData.status !== gameData.status)) {
-            gameData = newData;
-            processGameState(); 
-        } else {
-            // Otherwise, just update the data variable silently in the background
-            gameData = newData;
+        // Update global state
+        gameData = newData;
+
+        // If it's the first load or the status changed, re-render the UI
+        // CHANGE 'renderGameUI()' to whatever your main game function is called
+        // if you don't have renderGameUI, use the function name that draws your board.
+        if (isFirstLoad || newData.status !== (gameData ? gameData.status : null)) {
+            renderGameUI(); 
         }
     });
 }
-
         // --- GAME LOGIC ENGINE ---
         function processGameState() {
     // Add this line here
