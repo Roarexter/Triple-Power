@@ -927,7 +927,7 @@ function updateEnvironment() {
 
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), newGame);
                 await setDoc(lobbyRef, { gameId, hostId: currentUser.uid, status: 'waiting' });
-                watchGame(gameId);
+                (gameId);
             }
         }
 
@@ -941,7 +941,7 @@ function updateEnvironment() {
     data.players[1].pool = userData.unlockedCards; // Use userData here
     
     await updateDoc(gameRef, { players: data.players });
-    watchGame(id);
+    (id);
 }
 
         function watchGame(id) {
@@ -949,16 +949,19 @@ function updateEnvironment() {
         if (!snapshot.exists()) return;
         
         const newData = snapshot.data();
-        // Capture the old status before updating gameData
-        const oldStatus = gameData ? gameData.status : null;
-        
-        // Update the global gameData
-        gameData = newData;
 
-        // ONLY trigger the full processGameState logic if the status actually changed
-        // This stops the UI from flickering/lagging on minor data updates
-        if (oldStatus !== newData.status) {
-            processGameState();
+        // 1. Check if this is the first time the game is loading
+        const isFirstLoad = (typeof gameData === 'undefined' || gameData === null);
+
+        // 2. Logic: Run processGameState if:
+        //    a) It is the first load
+        //    b) OR the status has actually changed
+        if (isFirstLoad || (gameData && newData.status !== gameData.status)) {
+            gameData = newData;
+            processGameState(); 
+        } else {
+            // Otherwise, just update the data variable silently in the background
+            gameData = newData;
         }
     });
 }
