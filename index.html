@@ -6,7 +6,7 @@
     <title>Triple Power</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes cardReveal {
+       @keyframes cardReveal {
     0% { transform: scale(0.5) rotateY(90deg); opacity: 0; }
     100% { transform: scale(1) rotateY(0deg); opacity: 1; }
 }
@@ -945,12 +945,23 @@ function updateEnvironment() {
 }
 
         function watchGame(id) {
-            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', id), (snapshot) => {
-                if (!snapshot.exists()) return;
-                gameData = snapshot.data();
-                processGameState();
-            });
+    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'games', id), (snapshot) => {
+        if (!snapshot.exists()) return;
+        
+        const newData = snapshot.data();
+        // Capture the old status before updating gameData
+        const oldStatus = gameData ? gameData.status : null;
+        
+        // Update the global gameData
+        gameData = newData;
+
+        // ONLY trigger the full processGameState logic if the status actually changed
+        // This stops the UI from flickering/lagging on minor data updates
+        if (oldStatus !== newData.status) {
+            processGameState();
         }
+    });
+}
 
         // --- GAME LOGIC ENGINE ---
         function processGameState() {
@@ -1548,21 +1559,35 @@ const winnerName = gameData.players[res.winnerIdx].name || `Player ${res.winnerI
     ${winnerName} WINS THE ROUND!
 </div>
                 
-                ${playerRole === 'p0' ? `
-                    <button onclick="nextRound()" class="bg-blue-600 hover:bg-blue-500 text-white px-16 py-5 rounded-full font-black shadow-xl transition-all hover:scale-110 uppercase tracking-widest">
-                        ${isLastRound ? 'Finish Match' : 'Next Battle →'}
-                    </button>
-                ` : `
-                    <span class="text-slate-400 font-bold text-sm tracking-tighter animate-pulse">
-    WAITING FOR ${gameData.players[0].name.toUpperCase()}...
-</span>
-                `}
+               <button onclick="nextRound()" class="bg-blue-600 hover:bg-blue-500 text-white px-16 py-5 rounded-full font-black shadow-xl transition-all hover:scale-110 uppercase tracking-widest">
+    ${isLastRound ? 'Finish Match' : 'Next Battle →'}
+</button>
             </div>
         </div>
     `;
 }
 
         window.nextRound = async () => {
+
+window.nextRound = async () => {
+    // 1. THE STATUS GUARD:
+    // This stops the function from running if the game is already moving on.
+    if (gameData.status === 'processing') return; 
+
+    // 2. Set status to 'processing' immediately (optimistic update)
+    // This tells Firebase "We are working on it" so clicks are ignored
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+        status: 'processing'
+    });
+
+    // ... (Your existing code to handle cards/logic) ...
+
+    // 3. Update to the next state
+    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', gameId), {
+        status: 'battle_selection'
+    });
+};
+        
     const winnerIdx = gameData.battleResults.winnerIdx;
     const winningCard = gameData.activeCards[winnerIdx];
     
